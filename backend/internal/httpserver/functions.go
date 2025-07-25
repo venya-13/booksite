@@ -1,41 +1,11 @@
-package main
+package httpserver
 
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
-	"os"
-
-	"github.com/joho/godotenv"
 )
-
-var (
-	clientID     string
-	clientSecret string
-	redirectURI  string
-)
-
-func main() {
-
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
-	clientID = os.Getenv("GOOGLE_CLIENT_ID")
-	clientSecret = os.Getenv("GOOGLE_CLIENT_SECRET")
-	redirectURI = os.Getenv("GOOGLE_REDIRECT_URI")
-
-	http.HandleFunc("/", handleHome)
-	http.HandleFunc("/login", handleLogin)
-	http.HandleFunc("/oauth2callback", handleCallback)
-
-	fmt.Println("🌐 Server running at http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
-
-}
 
 func handleHome(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Welcome to the Google Auth Demo!")
@@ -56,7 +26,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, authURL, http.StatusTemporaryRedirect)
 }
 
-func handleCallback(w http.ResponseWriter, r *http.Request) {
+func HandleCallback(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	if code == "" {
 		http.Error(w, "No code found in callback", http.StatusBadRequest)
