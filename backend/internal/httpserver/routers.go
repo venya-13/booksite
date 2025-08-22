@@ -10,9 +10,11 @@ import (
 )
 
 var (
-	clientID     string
-	clientSecret string
-	redirectURI  string
+	port            string
+	clientID        string
+	clientSecret    string
+	redirectURIBase string
+	frontendURL     string
 )
 
 type Service interface {
@@ -27,14 +29,19 @@ type Server struct {
 
 func New(svc Service) *Server {
 
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	_ = godotenv.Load() // не падаем, если .env нет — можно брать из окружения
 
+	port = os.Getenv("PORT")
 	clientID = os.Getenv("GOOGLE_CLIENT_ID")
 	clientSecret = os.Getenv("GOOGLE_CLIENT_SECRET")
-	redirectURI = os.Getenv("GOOGLE_REDIRECT_URI")
+	redirectURIBase = os.Getenv("GOOGLE_REDIRECT_URI_BASE")
+	if redirectURIBase == "" {
+		redirectURIBase = "http://localhost"
+	}
+	frontendURL = os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:5173"
+	}
 
 	router := http.NewServeMux()
 	server := &Server{
@@ -54,7 +61,14 @@ func (s *Server) routes() {
 }
 
 func (s *Server) Start() error {
+
+	if port == "" {
+		port = "8080"
+	}
+
+	addr := ":" + port
+
 	fmt.Println("🌐 Server running at http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", s.router))
+	log.Fatal(http.ListenAndServe(addr, s.router))
 	return nil
 }
