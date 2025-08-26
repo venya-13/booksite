@@ -1,25 +1,60 @@
 package service
 
-import "fmt"
+import (
+	"encoding/json"
+	"net/url"
+	"os"
+)
+
+type TokenData struct {
+	AccessToken string `json:"access_token"`
+	IdToken     string `json:"id_token"`
+	TokenType   string `json:"token_type"`
+	ExpiresIn   int    `json:"expires_in"`
+}
+
+type OAuth interface {
+	GetAuthURL() string
+	ExchangeCode(code string) (*TokenData, error) // теперь с этим типом
+	FetchProfile(accessToken string) (map[string]interface{}, error)
+}
+
+type Repository interface {
+	SaveOrUpdate(user map[string]interface{}) error
+}
 
 type Service struct {
-	db DB
-	// cache Cache
+	oauth OAuth
+	repo  Repository
 }
 
-type DB interface {
-	HandleCallback() error
+func New(oauth OAuth, repo Repository) *Service {
+	return &Service{oauth: oauth, repo: repo}
 }
 
-func New() *Service {
+func (s *Service) GetAuthURL() string {
+	return s.oauth.GetAuthURL()
+}
 
-	return &Service{
-		// db: db
+func (s *Service) HandleCallback(code string) (string, error) {
+	tokenData, err := s.oauth.ExchangeCode(code)
+	if err != nil {
+		return "error:", err
 	}
+
+	userInfo, err := s.oauth.FetchProfile(tokenData.AccessToken)
+	if err != nil {
+		return "", err
+	}
+
+	if err := s.repo.SaveOrUpdate(userInfo); err != nil {
+		return "", err
+	}
+
+	userJson, _ := json.Marshal(userInfo)
+	return string(userJson), nil
 }
 
-func (svc *Service) HandleCallback() error {
-	fmt.Println("Handling callback in service layer")
-
-	return nil
+func (s *Service) GetFrontendURL(userJson string) string {
+	return os.Getenv("FRONTEND_URL") + "?user=" + url.QueryEscape(userJson)
 }
