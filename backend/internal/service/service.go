@@ -15,7 +15,7 @@ type TokenData struct {
 
 type OAuth interface {
 	GetAuthURL() string
-	ExchangeCode(code string) (*TokenData, error) // теперь с этим типом
+	ExchangeCode(code string) (*TokenData, error)
 	FetchProfile(accessToken string) (map[string]interface{}, error)
 }
 
