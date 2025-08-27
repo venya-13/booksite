@@ -6,69 +6,58 @@ import (
 	"net/http"
 	"os"
 
+	"google-auth-demo/backend/internal/service"
+
 	"github.com/joho/godotenv"
 )
 
 var (
-	port            string
-	clientID        string
-	clientSecret    string
-	redirectURIBase string
-	frontendURL     string
+	port         string
+	redirectBase string
+	frontendURL  string
 )
 
-type Service interface {
-	HandleCallback() error
-}
-
 type Server struct {
-	// port int
 	router *http.ServeMux
-	svc    Service
+	svc    *service.Service
 }
 
-func New(svc Service) *Server {
-
-	_ = godotenv.Load() // не падаем, если .env нет — можно брать из окружения
+func New(svc *service.Service) *Server {
+	_ = godotenv.Load()
 
 	port = os.Getenv("PORT")
-	clientID = os.Getenv("GOOGLE_CLIENT_ID")
-	clientSecret = os.Getenv("GOOGLE_CLIENT_SECRET")
-	redirectURIBase = os.Getenv("GOOGLE_REDIRECT_URI_BASE")
-	if redirectURIBase == "" {
-		redirectURIBase = "http://localhost"
+	if port == "" {
+		port = "8080"
 	}
+
+	redirectBase = os.Getenv("GOOGLE_REDIRECT_URI_BASE")
+	if redirectBase == "" {
+		redirectBase = "http://localhost"
+	}
+
 	frontendURL = os.Getenv("FRONTEND_URL")
 	if frontendURL == "" {
 		frontendURL = "http://localhost:5173"
 	}
 
-	router := http.NewServeMux()
 	server := &Server{
-		router: router,
+		router: http.NewServeMux(),
 		svc:    svc,
 	}
 
 	server.routes()
-
 	return server
 }
 
 func (s *Server) routes() {
-	s.router.HandleFunc("/", handleHome)
-	s.router.HandleFunc("/login", handleLogin)
-	s.router.HandleFunc("/oauth2callback", HandleCallback)
+	s.router.HandleFunc("/", s.handleHome)
+	s.router.HandleFunc("/login", s.handleLogin)
+	s.router.HandleFunc("/oauth2callback", s.handleCallback)
 }
 
 func (s *Server) Start() error {
-
-	if port == "" {
-		port = "8080"
-	}
-
 	addr := ":" + port
-
-	fmt.Println("🌐 Server running at http://localhost:8080")
+	fmt.Printf("🌐 Server running at http://localhost:%s\n", port)
 	log.Fatal(http.ListenAndServe(addr, s.router))
 	return nil
 }
