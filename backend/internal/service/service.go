@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/json"
 	"net/url"
-	"os"
 )
 
 type TokenData struct {
@@ -23,13 +22,24 @@ type Repository interface {
 	SaveOrUpdate(user map[string]interface{}) error
 }
 
-type Service struct {
-	oauth OAuth
-	repo  Repository
-}
+type (
+	Service struct {
+		oauth       OAuth
+		repo        Repository
+		frontendURL string
+	}
 
-func New(oauth OAuth, repo Repository) *Service {
-	return &Service{oauth: oauth, repo: repo}
+	Config struct {
+		FrontendURL string `env:"FRONTEND_URL"`
+	}
+)
+
+func New(config Config, oauth OAuth, repo Repository) *Service {
+	return &Service{
+		frontendURL: config.FrontendURL,
+		oauth:       oauth,
+		repo:        repo,
+	}
 }
 
 func (s *Service) GetAuthURL() string {
@@ -56,5 +66,5 @@ func (s *Service) HandleCallback(code string) (string, error) {
 }
 
 func (s *Service) GetFrontendURL(userJson string) string {
-	return os.Getenv("FRONTEND_URL") + "?user=" + url.QueryEscape(userJson)
+	return s.frontendURL + "?user=" + url.QueryEscape(userJson)
 }

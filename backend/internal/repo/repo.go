@@ -2,9 +2,13 @@ package repo
 
 import "fmt"
 
-type MockRepo struct{}
+type (
+	MockRepo struct{}
 
-func NewMockRepo() *MockRepo {
+	Config struct{}
+)
+
+func NewMockRepo(_ Config) *MockRepo {
 	return &MockRepo{}
 }
 
