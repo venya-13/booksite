@@ -17,9 +17,9 @@ type (
 	}
 
 	Config struct {
-		RedirectBaseURL string `env:"REDIRECT_BASE_URL"`
-		ClientID        string `env:"CLIENT_ID"`
-		ClientSecret    string `env:"CLIENT_SECRET"`
+		RedirectBaseURL string `env:"HTTP_SERVER_REDIRECT_BASE_URL"`
+		ClientID        string `env:"GOOGLE_CLIENT_ID"`
+		ClientSecret    string `env:"GOOGLE_CLIENT_SECRET"`
 	}
 )
 

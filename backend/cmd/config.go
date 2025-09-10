@@ -8,6 +8,7 @@ import (
 	"google-auth-demo/backend/internal/service"
 
 	"github.com/caarlos0/env"
+	"github.com/joho/godotenv"
 
 	googloauth "google-auth-demo/backend/internal/oauth/google"
 )
@@ -21,10 +22,15 @@ type Config struct {
 }
 
 func loadConfigFromEnvs() (*Config, error) {
+	_ = godotenv.Load()
 	var cfg Config
 
 	if err := env.Parse(&cfg); err != nil {
 		return nil, fmt.Errorf("parse config: %w", err)
+	}
+
+	if cfg.Logger.Level == "" {
+		cfg.Logger.Level = "debug"
 	}
 
 	return &cfg, nil

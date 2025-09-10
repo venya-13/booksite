@@ -18,9 +18,9 @@ type (
 	}
 
 	Config struct {
-		Port            int `env:"PORT" envDefault:"8080"`
-		RedirectBaseURL int `env:"REDIRECT_BASE_URL"`
-		FrontedURL      int `env:"FRONTEND_URL"`
+		Port            int    `env:"HTTP_SERVER_PORT" envDefault:"8080"`
+		RedirectBaseURL string `env:"HTTP_SERVER_REDIRECT_BASE_URL"`
+		FrontendURL     string `env:"HTTP_SERVER_FRONTEND_URL"`
 	}
 )
 
@@ -31,7 +31,8 @@ func New(config Config, svc *service.Service) *Server {
 	}
 
 	httpServer := http.Server{
-		Addr:    fmt.Sprintf(":%d", config.Port),
+		//Addr:    fmt.Sprintf(":%d", config.Port),
+		Addr:    fmt.Sprintf(":8080"),
 		Handler: srv.createMux(),
 	}
 	srv.s = &httpServer
@@ -50,6 +51,8 @@ func (s *Server) createMux() *http.ServeMux {
 }
 
 func (s *Server) Run(ctx context.Context) error {
+	slog.Info("server starting", slog.String("addr", s.s.Addr))
+
 	go func() {
 		<-ctx.Done()
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
