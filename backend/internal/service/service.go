@@ -6,16 +6,18 @@ import (
 )
 
 type TokenData struct {
-	AccessToken string `json:"access_token"`
-	IdToken     string `json:"id_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresIn   int    `json:"expires_in"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	IdToken      string `json:"id_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int    `json:"expires_in"`
 }
 
 type OAuth interface {
 	GetAuthURL() string
-	ExchangeCode(code string) (*TokenData, error)
-	FetchProfile(accessToken string) (map[string]interface{}, error)
+	ExchangeCode(string) (*TokenData, error)
+	RefreshAccessToken(string) (*TokenData, error)
+	FetchProfile(string) (map[string]interface{}, error)
 }
 
 type Repository interface {

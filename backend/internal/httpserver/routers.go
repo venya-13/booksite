@@ -31,8 +31,8 @@ func New(config Config, svc *service.Service) *Server {
 	}
 
 	httpServer := http.Server{
-		//Addr:    fmt.Sprintf(":%d", config.Port),
-		Addr:    fmt.Sprintf(":8080"),
+		Addr: fmt.Sprintf(":%d", config.Port),
+		//Addr:    fmt.Sprintf(":8080"),
 		Handler: srv.createMux(),
 	}
 	srv.s = &httpServer

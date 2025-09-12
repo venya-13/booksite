@@ -29,9 +29,5 @@ func loadConfigFromEnvs() (*Config, error) {
 		return nil, fmt.Errorf("parse config: %w", err)
 	}
 
-	if cfg.Logger.Level == "" {
-		cfg.Logger.Level = "debug"
-	}
-
 	return &cfg, nil
 }

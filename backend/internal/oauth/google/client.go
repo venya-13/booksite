@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"google-auth-demo/backend/internal/service"
 )
@@ -14,6 +15,10 @@ type (
 		redirectURL  string
 		clientID     string
 		clientSecret string
+
+		// Temporary in-memory token storage (later will be replaced with DB)
+		tokenData *service.TokenData
+		expiry    time.Time
 	}
 
 	Config struct {
@@ -33,6 +38,7 @@ func New(config Config) *Client {
 	}
 }
 
+// GetAuthURL builds Google OAuth2 authorization URL
 func (c *Client) GetAuthURL() string {
 	authURL := "https://accounts.google.com/o/oauth2/v2/auth?" + url.Values{
 		"client_id":     {c.clientID},
@@ -47,6 +53,7 @@ func (c *Client) GetAuthURL() string {
 	return authURL
 }
 
+// ExchangeCode exchanges authorization code for access and refresh tokens
 func (c *Client) ExchangeCode(code string) (*service.TokenData, error) {
 	resp, err := http.PostForm("https://oauth2.googleapis.com/token", url.Values{
 		"code":          {code},
@@ -65,7 +72,57 @@ func (c *Client) ExchangeCode(code string) (*service.TokenData, error) {
 		return nil, err
 	}
 
+	// store token in memory
+	c.tokenData = &tokenData
+	c.expiry = time.Now().Add(time.Second * time.Duration(tokenData.ExpiresIn))
+
 	return &tokenData, nil
+}
+
+// RefreshAccessToken requests a new access token using the refresh token
+func (c *Client) RefreshAccessToken(refreshToken string) (*service.TokenData, error) {
+	resp, err := http.PostForm("https://oauth2.googleapis.com/token", url.Values{
+		"client_id":     {c.clientID},
+		"client_secret": {c.clientSecret},
+		"refresh_token": {refreshToken},
+		"grant_type":    {"refresh_token"},
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var tokenData service.TokenData
+	if err := json.NewDecoder(resp.Body).Decode(&tokenData); err != nil {
+		return nil, err
+	}
+
+	// update in-memory token storage
+	if tokenData.RefreshToken == "" && c.tokenData != nil {
+		tokenData.RefreshToken = c.tokenData.RefreshToken
+	}
+
+	c.tokenData = &tokenData
+	c.expiry = time.Now().Add(time.Second * time.Duration(tokenData.ExpiresIn))
+
+	return &tokenData, nil
+}
+
+func (c *Client) EnsureAccessToken() (string, error) {
+	if c.tokenData == nil {
+		return "", fmt.Errorf("token is not initialized")
+	}
+
+	// check expiry time
+	if time.Now().After(c.expiry) {
+		newToken, err := c.RefreshAccessToken(c.tokenData.RefreshToken)
+		if err != nil {
+			return "", err
+		}
+		return newToken.AccessToken, nil
+	}
+
+	return c.tokenData.AccessToken, nil
 }
 
 func (c *Client) FetchProfile(accessToken string) (map[string]interface{}, error) {
