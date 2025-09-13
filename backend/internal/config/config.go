@@ -6,6 +6,7 @@ import (
 	"google-auth-demo/backend/internal/logger"
 	"google-auth-demo/backend/internal/repo"
 	"google-auth-demo/backend/internal/service"
+	"os"
 
 	"github.com/caarlos0/env"
 	"github.com/joho/godotenv"
@@ -22,7 +23,16 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
-	_ = godotenv.Load()
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("getting cwd: %w", err)
+	}
+
+	envPath := cwd + string(os.PathSeparator) + ".env"
+
+	if err := godotenv.Load(envPath); err != nil {
+		fmt.Println("Warning: .env file not found at", envPath)
+	}
 
 	var cfg Config
 	if err := env.Parse(&cfg); err != nil {

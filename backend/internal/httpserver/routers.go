@@ -18,9 +18,9 @@ type (
 	}
 
 	Config struct {
-		Port            int    `env:"HTTP_SERVER_PORT" envDefault:"8080"`
-		RedirectBaseURL string `env:"HTTP_SERVER_REDIRECT_BASE_URL"`
-		FrontendURL     string `env:"HTTP_SERVER_FRONTEND_URL"`
+		Port            int    `env:"PORT"`
+		RedirectBaseURL string `env:"REDIRECT_BASE_URL"`
+		FrontendURL     string `env:"FRONTEND_URL"`
 	}
 )
 

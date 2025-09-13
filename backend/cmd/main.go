@@ -30,6 +30,8 @@ func run() error {
 		return fmt.Errorf("loading config: %w", err)
 	}
 
+	fmt.Printf("DEBUG: HttpServer Port=%d\n", cfg.HttpServer.Port)
+
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
