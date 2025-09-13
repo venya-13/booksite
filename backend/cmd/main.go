@@ -8,12 +8,13 @@ import (
 	"os/signal"
 	"syscall"
 
+	"google-auth-demo/backend/internal/config"
 	"google-auth-demo/backend/internal/httpserver"
+	"google-auth-demo/backend/internal/oauth/google"
 	"google-auth-demo/backend/internal/repo"
 	"google-auth-demo/backend/internal/service"
 
 	"google-auth-demo/backend/internal/logger"
-	googloauth "google-auth-demo/backend/internal/oauth/google"
 )
 
 func main() {
@@ -24,7 +25,7 @@ func main() {
 }
 
 func run() error {
-	cfg, err := loadConfigFromEnvs()
+	cfg, err := config.Load()
 	if err != nil {
 		return fmt.Errorf("loading config: %w", err)
 	}
@@ -39,13 +40,10 @@ func run() error {
 	return start(ctx, cfg)
 }
 
-func start(ctx context.Context, cfg *Config) error {
-	oauthGoogle := googloauth.New(cfg.GoogleAuth)
-
+func start(ctx context.Context, cfg *config.Config) error {
+	oauthGoogle := google.New(cfg.GoogleAuth)
 	repository := repo.NewMockRepo(cfg.Repo)
-
 	svc := service.New(cfg.Service, oauthGoogle, repository)
-
 	httpServer := httpserver.New(cfg.HttpServer, svc)
 
 	return httpServer.Run(ctx)

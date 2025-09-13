@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"fmt"
@@ -21,12 +21,16 @@ type Config struct {
 	Service    service.Config    `envprefix:"SERVICE_"`
 }
 
-func loadConfigFromEnvs() (*Config, error) {
+func Load() (*Config, error) {
 	_ = godotenv.Load()
-	var cfg Config
 
+	var cfg Config
 	if err := env.Parse(&cfg); err != nil {
 		return nil, fmt.Errorf("parse config: %w", err)
+	}
+
+	if cfg.Logger.Level == "" {
+		cfg.Logger.Level = "info"
 	}
 
 	return &cfg, nil
