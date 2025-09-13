@@ -10,11 +10,10 @@ import (
 
 	"google-auth-demo/backend/internal/config"
 	"google-auth-demo/backend/internal/httpserver"
+	"google-auth-demo/backend/internal/logger"
 	"google-auth-demo/backend/internal/oauth/google"
 	"google-auth-demo/backend/internal/repo"
 	"google-auth-demo/backend/internal/service"
-
-	"google-auth-demo/backend/internal/logger"
 )
 
 func main() {
@@ -35,7 +34,9 @@ func run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	if err := logger.Init(cfg.Logger); err != nil {
+	if err := logger.Init(logger.Config{
+		Level: cfg.Logger.Level,
+	}); err != nil {
 		return fmt.Errorf("initializing logger: %w", err)
 	}
 
@@ -43,10 +44,34 @@ func run() error {
 }
 
 func start(ctx context.Context, cfg *config.Config) error {
-	oauthGoogle := google.New(cfg.GoogleAuth)
-	repository := repo.NewMockRepo(cfg.Repo)
-	svc := service.New(cfg.Service, oauthGoogle, repository)
-	httpServer := httpserver.New(cfg.HttpServer, svc)
+
+	googleCfg := google.Config{
+		ClientID:        cfg.GoogleAuth.ClientID,
+		ClientSecret:    cfg.GoogleAuth.ClientSecret,
+		RedirectBaseURL: cfg.HttpServer.RedirectBaseURL,
+	}
+
+	oauthGoogle := google.New(googleCfg)
+	repository := repo.NewMockRepo(repo.Config{})
+
+	svc := service.New(service.Config{
+		FrontendURL: cfg.HttpServer.FrontendURL,
+	}, oauthGoogle, repository)
+
+	httpServerCfg := httpserver.Config{
+		Port:            cfg.HttpServer.Port,
+		FrontendURL:     cfg.HttpServer.FrontendURL,
+		RedirectBaseURL: cfg.HttpServer.RedirectBaseURL,
+	}
+
+	httpServer := httpserver.New(httpServerCfg, svc)
+
+	fmt.Println("DEBUG: HttpServer Port:", cfg.HttpServer.Port)
+	fmt.Println("DEBUG: Frontend URL:", cfg.HttpServer.FrontendURL)
+	fmt.Println("DEBUG: Redirect Base URL:", cfg.HttpServer.RedirectBaseURL)
+	fmt.Println("DEBUG: Google ClientID:", cfg.GoogleAuth.ClientID)
+	fmt.Println("DEBUG: Google ClientSecret:", cfg.GoogleAuth.ClientSecret != "")
+	fmt.Println("DEBUG: Logger Level:", cfg.Logger.Level)
 
 	return httpServer.Run(ctx)
 }

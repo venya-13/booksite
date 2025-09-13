@@ -2,45 +2,41 @@ package config
 
 import (
 	"fmt"
-	"google-auth-demo/backend/internal/httpserver"
-	"google-auth-demo/backend/internal/logger"
-	"google-auth-demo/backend/internal/repo"
-	"google-auth-demo/backend/internal/service"
-	"os"
 
-	"github.com/caarlos0/env"
-	"github.com/joho/godotenv"
-
-	googloauth "google-auth-demo/backend/internal/oauth/google"
+	"github.com/spf13/viper"
 )
 
 type Config struct {
-	Logger     logger.Config     `envprefix:"LOG_"`
-	GoogleAuth googloauth.Config `envprefix:"GOOGLE_AUTH_"`
-	Repo       repo.Config       `envprefix:"REPO_"`
-	HttpServer httpserver.Config `envprefix:"HTTP_SERVER_"`
-	Service    service.Config    `envprefix:"SERVICE_"`
+	HttpServer struct {
+		Port            int    `mapstructure:"port"`
+		FrontendURL     string `mapstructure:"frontend_url"`
+		RedirectBaseURL string `mapstructure:"redirect_base_url"`
+	} `mapstructure:"httpserver"`
+
+	GoogleAuth struct {
+		ClientID     string `mapstructure:"client_id"`
+		ClientSecret string `mapstructure:"client_secret"`
+	} `mapstructure:"googleauth"`
+
+	Logger struct {
+		Level string `mapstructure:"level"`
+	} `mapstructure:"logger"`
 }
 
 func Load() (*Config, error) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return nil, fmt.Errorf("getting cwd: %w", err)
-	}
+	viper.SetConfigFile("config.yaml") // location of config file
+	viper.AutomaticEnv()               // yaml
 
-	envPath := cwd + string(os.PathSeparator) + ".env"
+	viper.SetDefault("HttpServer.Port", 8080)
+	viper.SetDefault("Logger.Level", "info")
 
-	if err := godotenv.Load(envPath); err != nil {
-		fmt.Println("Warning: .env file not found at", envPath)
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Println("Warning: config.yaml not found, using defaults and env")
 	}
 
 	var cfg Config
-	if err := env.Parse(&cfg); err != nil {
-		return nil, fmt.Errorf("parse config: %w", err)
-	}
-
-	if cfg.Logger.Level == "" {
-		cfg.Logger.Level = "info"
+	if err := viper.Unmarshal(&cfg); err != nil {
+		return nil, fmt.Errorf("unable to decode config into struct: %w", err)
 	}
 
 	return &cfg, nil
