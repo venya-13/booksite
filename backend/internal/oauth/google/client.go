@@ -25,11 +25,12 @@ type (
 		RedirectBaseURL string `env:"HTTP_SERVER_REDIRECT_BASE_URL"`
 		ClientID        string `env:"GOOGLE_CLIENT_ID"`
 		ClientSecret    string `env:"GOOGLE_CLIENT_SECRET"`
+		Port            int    `env:"HTTP_SERVER_PORT" envDefault:"8080"`
 	}
 )
 
 func New(config Config) *Client {
-	redirectURL := fmt.Sprintf("%s/oauth2callback", config.RedirectBaseURL)
+	redirectURL := fmt.Sprintf("%s:%d/oauth2callback", config.RedirectBaseURL, config.Port)
 
 	return &Client{
 		redirectURL:  redirectURL,

@@ -49,6 +49,7 @@ func start(ctx context.Context, cfg *config.Config) error {
 		ClientID:        cfg.GoogleAuth.ClientID,
 		ClientSecret:    cfg.GoogleAuth.ClientSecret,
 		RedirectBaseURL: cfg.HttpServer.RedirectBaseURL,
+		Port:            cfg.HttpServer.Port,
 	}
 
 	oauthGoogle := google.New(googleCfg)
