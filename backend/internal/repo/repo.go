@@ -38,14 +38,30 @@ func (r *PostgresRepo) SaveOrUpdate(user map[string]interface{}) error {
 	picture := user["picture"].(string)
 
 	_, err := r.db.Exec(ctx, `
-		INSERT INTO users (google_id, email, name, picture)
-		VALUES ($1, $2, $3, $4)
-		ON CONFLICT (google_id) DO UPDATE
-		SET email = EXCLUDED.email,
-		    name = EXCLUDED.name,
-		    picture = EXCLUDED.picture,
-		    updated_at = CURRENT_TIMESTAMP;
-	`, googleID, email, name, picture)
+	INSERT INTO users (google_id, email, name, picture, refresh_token)
+	VALUES ($1, $2, $3, $4, $5)
+	ON CONFLICT (google_id) DO UPDATE
+	SET email = EXCLUDED.email,
+	    name = EXCLUDED.name,
+	    picture = EXCLUDED.picture,
+	    refresh_token = EXCLUDED.refresh_token,
+	    updated_at = CURRENT_TIMESTAMP;
+	`, googleID, email, name, picture, user["refresh_token"])
 
 	return err
+}
+
+func (r *PostgresRepo) GetRefreshTokenByGoogleID(googleID string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var refreshToken string
+	err := r.db.QueryRow(ctx, `
+		SELECT refresh_token FROM users WHERE google_id=$1
+	`, googleID).Scan(&refreshToken)
+
+	if err != nil {
+		return "", fmt.Errorf("get refresh token: %w", err)
+	}
+	return refreshToken, nil
 }

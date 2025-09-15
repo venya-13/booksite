@@ -45,6 +45,7 @@ func (s *Server) createMux() *http.ServeMux {
 	mux.HandleFunc("/", s.handleHome)
 	mux.HandleFunc("/login", s.handleLogin)
 	mux.HandleFunc("/oauth2callback", s.handleCallback)
+	mux.HandleFunc("/refresh", s.handleRefresh)
 
 	return mux
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"google-auth-demo/backend/internal/repo"
 	"net/url"
 )
 
@@ -72,4 +73,35 @@ func (s *Service) HandleCallback(code string) (string, error) {
 
 func (s *Service) GetFrontendURL(userJson string) string {
 	return s.frontendURL + "?user=" + url.QueryEscape(userJson)
+}
+
+func (s *Service) EnsureAccessToken(googleID string) (string, error) {
+	// 1. get refresh_token from DB
+	refreshToken, err := s.repo.(*repo.PostgresRepo).GetRefreshTokenByGoogleID(googleID)
+	if err != nil {
+		return "", err
+	}
+
+	// request new access_token using refresh_token
+	newToken, err := s.oauth.RefreshAccessToken(refreshToken)
+	if err != nil {
+		return "", err
+	}
+
+	// save new refresh_token if it was rotated
+	userInfo := map[string]interface{}{
+		"id":            googleID,
+		"refresh_token": newToken.RefreshToken,
+	}
+	_ = s.repo.SaveOrUpdate(userInfo)
+
+	return newToken.AccessToken, nil
+}
+
+func (s *Service) OAuth() OAuth {
+	return s.oauth
+}
+
+func (s *Service) SaveUser(user map[string]interface{}) error {
+	return s.repo.SaveOrUpdate(user)
 }
