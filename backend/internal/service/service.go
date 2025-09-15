@@ -51,13 +51,16 @@ func (s *Service) GetAuthURL() string {
 func (s *Service) HandleCallback(code string) (string, error) {
 	tokenData, err := s.oauth.ExchangeCode(code)
 	if err != nil {
-		return "error:", err
+		return "", err
 	}
 
 	userInfo, err := s.oauth.FetchProfile(tokenData.AccessToken)
 	if err != nil {
 		return "", err
 	}
+
+	// add refresh token to user info for saving in DB
+	userInfo["refresh_token"] = tokenData.RefreshToken
 
 	if err := s.repo.SaveOrUpdate(userInfo); err != nil {
 		return "", err

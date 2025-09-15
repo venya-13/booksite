@@ -53,7 +53,14 @@ func start(ctx context.Context, cfg *config.Config) error {
 	}
 
 	oauthGoogle := google.New(googleCfg)
-	repository := repo.NewMockRepo(repo.Config{})
+
+	repository, err := repo.NewPostgresRepo(repo.PostgresConfig{
+		DSN: cfg.Database.DSN,
+	})
+
+	if err != nil {
+		return fmt.Errorf("init repo: %w", err)
+	}
 
 	svc := service.New(service.Config{
 		FrontendURL: cfg.HttpServer.FrontendURL,

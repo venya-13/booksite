@@ -21,6 +21,10 @@ type Config struct {
 	Logger struct {
 		Level string `mapstructure:"level"`
 	} `mapstructure:"logger"`
+
+	Database struct {
+		DSN string `mapstructure:"dsn"`
+	} `mapstructure:"database"`
 }
 
 func Load() (*Config, error) {
