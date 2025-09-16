@@ -74,12 +74,5 @@ func start(ctx context.Context, cfg *config.Config) error {
 
 	httpServer := httpserver.New(httpServerCfg, svc)
 
-	fmt.Println("DEBUG: HttpServer Port:", cfg.HttpServer.Port)
-	fmt.Println("DEBUG: Frontend URL:", cfg.HttpServer.FrontendURL)
-	fmt.Println("DEBUG: Redirect Base URL:", cfg.HttpServer.RedirectBaseURL)
-	fmt.Println("DEBUG: Google ClientID:", cfg.GoogleAuth.ClientID)
-	fmt.Println("DEBUG: Google ClientSecret:", cfg.GoogleAuth.ClientSecret != "")
-	fmt.Println("DEBUG: Logger Level:", cfg.Logger.Level)
-
 	return httpServer.Run(ctx)
 }

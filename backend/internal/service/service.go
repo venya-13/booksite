@@ -2,8 +2,8 @@ package service
 
 import (
 	"encoding/json"
-	"google-auth-demo/backend/internal/repo"
 	"net/url"
+	"time"
 )
 
 type TokenData struct {
@@ -23,6 +23,7 @@ type OAuth interface {
 
 type Repository interface {
 	SaveOrUpdate(user map[string]interface{}) error
+	GetUserByGoogleID(googleID string) (map[string]interface{}, error)
 }
 
 type (
@@ -60,13 +61,17 @@ func (s *Service) HandleCallback(code string) (string, error) {
 		return "", err
 	}
 
-	// add refresh token to user info for saving in DB
+	// add tokens and time
+	userInfo["access_token"] = tokenData.AccessToken
 	userInfo["refresh_token"] = tokenData.RefreshToken
+	userInfo["token_expiry"] = time.Now().Add(time.Duration(tokenData.ExpiresIn) * time.Second)
 
+	// сохраняем в базу
 	if err := s.repo.SaveOrUpdate(userInfo); err != nil {
 		return "", err
 	}
 
+	// back to frontend
 	userJson, _ := json.Marshal(userInfo)
 	return string(userJson), nil
 }
@@ -76,30 +81,46 @@ func (s *Service) GetFrontendURL(userJson string) string {
 }
 
 func (s *Service) EnsureAccessToken(googleID string) (string, error) {
-	// 1. get refresh_token from DB
-	refreshToken, err := s.repo.(*repo.PostgresRepo).GetRefreshTokenByGoogleID(googleID)
+	user, err := s.repo.GetUserByGoogleID(googleID)
 	if err != nil {
 		return "", err
 	}
 
-	// request new access_token using refresh_token
+	expiry := user["token_expiry"].(time.Time)
+	accessToken := user["access_token"].(string)
+
+	// still valid
+	if time.Now().Before(expiry) {
+		return accessToken, nil
+	}
+
+	// need to refresh
+	refreshToken := user["refresh_token"].(string)
 	newToken, err := s.oauth.RefreshAccessToken(refreshToken)
 	if err != nil {
 		return "", err
 	}
 
-	// save new refresh_token if it was rotated
-	userInfo := map[string]interface{}{
-		"id":            googleID,
-		"refresh_token": newToken.RefreshToken,
+	// if google did not return a new refresh token, keep the old one
+	if newToken.RefreshToken == "" {
+		newToken.RefreshToken = refreshToken
 	}
-	_ = s.repo.SaveOrUpdate(userInfo)
+
+	// update user data
+	user["access_token"] = newToken.AccessToken
+	user["refresh_token"] = newToken.RefreshToken
+	user["token_expiry"] = time.Now().Add(time.Duration(newToken.ExpiresIn) * time.Second)
+
+	// save back
+	if err := s.repo.SaveOrUpdate(user); err != nil {
+		return "", err
+	}
 
 	return newToken.AccessToken, nil
 }
 
-func (s *Service) OAuth() OAuth {
-	return s.oauth
+func (s *Service) FetchProfile(accessToken string) (map[string]interface{}, error) {
+	return s.oauth.FetchProfile(accessToken)
 }
 
 func (s *Service) SaveUser(user map[string]interface{}) error {

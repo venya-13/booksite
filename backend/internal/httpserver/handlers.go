@@ -38,14 +38,13 @@ func (s *Server) handleSomeProtectedAPI(w http.ResponseWriter, r *http.Request) 
 
 	accessToken, err := s.svc.EnsureAccessToken(googleID)
 	if err != nil {
-		http.Error(w, "Auth error: "+err.Error(), 500)
+		http.Error(w, "Auth error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// we can now use this access token to call Google APIs
-	profile, err := s.svc.OAuth().FetchProfile(accessToken)
+	profile, err := s.svc.FetchProfile(accessToken)
 	if err != nil {
-		http.Error(w, "Google API error: "+err.Error(), 500)
+		http.Error(w, "Google API error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -53,40 +52,61 @@ func (s *Server) handleSomeProtectedAPI(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Server) handleRefresh(w http.ResponseWriter, r *http.Request) {
-	refreshToken := r.URL.Query().Get("refresh_token")
-	if refreshToken == "" {
-		http.Error(w, "refresh_token required", http.StatusBadRequest)
+	googleID := r.URL.Query().Get("google_id")
+	if googleID == "" {
+		http.Error(w, "google_id required", http.StatusBadRequest)
 		return
 	}
 
-	tokenData, err := s.svc.OAuth().RefreshAccessToken(refreshToken)
+	accessToken, err := s.svc.EnsureAccessToken(googleID)
 	if err != nil {
 		http.Error(w, "failed to refresh token: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	userInfo, err := s.svc.OAuth().FetchProfile(tokenData.AccessToken)
+	userInfo, err := s.svc.FetchProfile(accessToken)
 	if err != nil {
 		http.Error(w, "failed to fetch profile: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// save new user info and rotated refresh token
-	userInfo["refresh_token"] = tokenData.RefreshToken
+	userInfo["id"] = googleID
+	userInfo["access_token"] = accessToken
 	if err := s.svc.SaveUser(userInfo); err != nil {
 		http.Error(w, "failed to save user: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// give new tokens and user info back to client
 	response := map[string]interface{}{
-		"access_token":  tokenData.AccessToken,
-		"refresh_token": tokenData.RefreshToken,
-		"id_token":      tokenData.IdToken,
-		"expires_in":    tokenData.ExpiresIn,
-		"user":          userInfo,
+		"access_token": accessToken,
+		"user":         userInfo,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
+}
+
+func (s *Server) GetProfile(w http.ResponseWriter, r *http.Request) {
+	googleID := r.URL.Query().Get("google_id")
+	if googleID == "" {
+		http.Error(w, "google_id required", http.StatusBadRequest)
+		return
+	}
+
+	// gет access token
+	accessToken, err := s.svc.EnsureAccessToken(googleID)
+	if err != nil {
+		http.Error(w, "failed to ensure token", http.StatusInternalServerError)
+		return
+	}
+
+	// get profile
+	profile, err := s.svc.FetchProfile(accessToken)
+	if err != nil {
+		http.Error(w, "failed to fetch profile", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(profile)
 }
