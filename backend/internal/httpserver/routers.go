@@ -1,63 +1,73 @@
 package httpserver
 
 import (
+	"context"
+	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
-	"os"
+	"time"
 
 	"google-auth-demo/backend/internal/service"
-
-	"github.com/joho/godotenv"
 )
 
-var (
-	port         string
-	redirectBase string
-	frontendURL  string
+type (
+	Server struct {
+		svc *service.Service
+		s   *http.Server
+	}
+
+	Config struct {
+		Port            int    `env:"PORT"`
+		RedirectBaseURL string `env:"REDIRECT_BASE_URL"`
+		FrontendURL     string `env:"FRONTEND_URL"`
+	}
 )
 
-type Server struct {
-	router *http.ServeMux
-	svc    *service.Service
+func New(config Config, svc *service.Service) *Server {
+
+	srv := Server{
+		svc: svc,
+	}
+
+	httpServer := http.Server{
+		Addr:    fmt.Sprintf(":%d", config.Port),
+		Handler: srv.createMux(),
+	}
+	srv.s = &httpServer
+
+	return &srv
 }
 
-func New(svc *service.Service) *Server {
-	_ = godotenv.Load()
+func (s *Server) createMux() *http.ServeMux {
+	mux := http.NewServeMux()
 
-	port = os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+	mux.HandleFunc("/", s.handleHome)
+	mux.HandleFunc("/login", s.handleLogin)
+	mux.HandleFunc("/oauth2callback", s.handleCallback)
+	mux.HandleFunc("/refresh", s.handleRefresh)
 
-	redirectBase = os.Getenv("GOOGLE_REDIRECT_URI_BASE")
-	if redirectBase == "" {
-		redirectBase = "http://localhost"
-	}
-
-	frontendURL = os.Getenv("FRONTEND_URL")
-	if frontendURL == "" {
-		frontendURL = "http://localhost:5173"
-	}
-
-	server := &Server{
-		router: http.NewServeMux(),
-		svc:    svc,
-	}
-
-	server.routes()
-	return server
+	return mux
 }
 
-func (s *Server) routes() {
-	s.router.HandleFunc("/", s.handleHome)
-	s.router.HandleFunc("/login", s.handleLogin)
-	s.router.HandleFunc("/oauth2callback", s.handleCallback)
-}
+func (s *Server) Run(ctx context.Context) error {
+	slog.Info("server starting", slog.String("addr", s.s.Addr))
 
-func (s *Server) Start() error {
-	addr := ":" + port
-	fmt.Printf("🌐 Server running at http://localhost:%s\n", port)
-	log.Fatal(http.ListenAndServe(addr, s.router))
+	go func() {
+		<-ctx.Done()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := s.s.Shutdown(shutdownCtx); err != nil {
+			slog.Error("shutting down server", slog.String("error", err.Error()))
+		}
+	}()
+
+	if err := s.s.ListenAndServe(); err != nil {
+		if !errors.Is(err, http.ErrServerClosed) {
+			return fmt.Errorf("http server close: %w", err)
+		}
+	}
+
 	return nil
 }
