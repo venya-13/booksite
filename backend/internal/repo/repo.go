@@ -32,15 +32,16 @@ func (r *PostgresRepo) SaveOrUpdate(user map[string]interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	googleID := user["id"].(string)
-	email := user["email"].(string)
-	name := user["name"].(string)
-	picture := user["picture"].(string)
-	accessToken := user["access_token"].(string)
-	refreshToken := user["refresh_token"].(string)
+	googleID, _ := user["id"].(string)
+	email, _ := user["email"].(string)
+	name, _ := user["name"].(string)
+	picture, _ := user["picture"].(string)
+	accessToken, _ := user["access_token"].(string)
+	refreshToken, _ := user["refresh_token"].(string)
+	tokenExpiry, _ := user["token_expiry"].(time.Time)
 
 	// here we are waiting that token_expiry is passed as time.Time
-	tokenExpiry := user["token_expiry"].(time.Time)
+	tokenExpiry = user["token_expiry"].(time.Time)
 
 	_, err := r.db.Exec(ctx, `
 		INSERT INTO users (google_id, email, name, picture, access_token, refresh_token, token_expiry)

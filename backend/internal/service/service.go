@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"time"
 )
@@ -61,12 +62,45 @@ func (s *Service) HandleCallback(code string) (string, error) {
 		return "", err
 	}
 
-	// add tokens and time
+	// get already exist
+	existingUser, _ := s.repo.GetUserByGoogleID(userInfo["id"].(string))
+
+	// update token info
 	userInfo["access_token"] = tokenData.AccessToken
-	userInfo["refresh_token"] = tokenData.RefreshToken
 	userInfo["token_expiry"] = time.Now().Add(time.Duration(tokenData.ExpiresIn) * time.Second)
 
-	// сохраняем в базу
+	if tokenData.RefreshToken != "" {
+		userInfo["refresh_token"] = tokenData.RefreshToken
+	} else if existingUser != nil {
+		userInfo["refresh_token"] = existingUser["refresh_token"]
+	}
+
+	id, ok := userInfo["id"].(string)
+	if !ok || id == "" {
+		return "", fmt.Errorf("user id missing in profile")
+	}
+
+	email, ok := userInfo["email"].(string)
+	if !ok {
+		email = ""
+	}
+
+	name, ok := userInfo["name"].(string)
+	if !ok {
+		name = ""
+	}
+
+	picture, ok := userInfo["picture"].(string)
+	if !ok {
+		picture = ""
+	}
+
+	userInfo["id"] = id
+	userInfo["email"] = email
+	userInfo["name"] = name
+	userInfo["picture"] = picture
+
+	// save to database
 	if err := s.repo.SaveOrUpdate(userInfo); err != nil {
 		return "", err
 	}
@@ -89,13 +123,17 @@ func (s *Service) EnsureAccessToken(googleID string) (string, error) {
 	expiry := user["token_expiry"].(time.Time)
 	accessToken := user["access_token"].(string)
 
-	// still valid
+	// if token is still valid, return it
 	if time.Now().Before(expiry) {
 		return accessToken, nil
 	}
 
-	// need to refresh
-	refreshToken := user["refresh_token"].(string)
+	// update token
+	refreshToken, ok := user["refresh_token"].(string)
+	if !ok || refreshToken == "" {
+		return "", fmt.Errorf("no refresh token available for user %s", googleID)
+	}
+
 	newToken, err := s.oauth.RefreshAccessToken(refreshToken)
 	if err != nil {
 		return "", err
@@ -106,12 +144,11 @@ func (s *Service) EnsureAccessToken(googleID string) (string, error) {
 		newToken.RefreshToken = refreshToken
 	}
 
-	// update user data
+	// updaate user info
 	user["access_token"] = newToken.AccessToken
 	user["refresh_token"] = newToken.RefreshToken
 	user["token_expiry"] = time.Now().Add(time.Duration(newToken.ExpiresIn) * time.Second)
 
-	// save back
 	if err := s.repo.SaveOrUpdate(user); err != nil {
 		return "", err
 	}
