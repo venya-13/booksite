@@ -34,7 +34,8 @@ func (s *Server) handleCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSomeProtectedAPI(w http.ResponseWriter, r *http.Request) {
-	googleID := "какой-то_google_id_из_сессии_или_jwt"
+	googleID := "some-google-id" // In real scenario, extract from JWT or session
+	// need jwt to funtion properly
 
 	accessToken, err := s.svc.EnsureAccessToken(googleID)
 	if err != nil {

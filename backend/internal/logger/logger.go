@@ -7,24 +7,30 @@ import (
 )
 
 type Config struct {
-	Level string `env:"LEVEL" envDefault:"info"`
-	JSON  bool   `env:"JSON"`
+	Level string `env:"LEVEL" envDefault:"info" json:"level" yaml:"level"`
+	JSON  bool   `env:"JSON" json:"json" yaml:"json"`
 }
+
+const DefaultLevel = "info"
 
 func Init(config Config) error {
 	var lvl slog.Level
 	if err := lvl.UnmarshalText([]byte(config.Level)); err != nil {
-		return fmt.Errorf("invalid level: %w", err)
+		return fmt.Errorf("invalid log level %q: %w", config.Level, err)
 	}
 
-	var logHandler slog.Handler
+	var handler slog.Handler
+	opts := &slog.HandlerOptions{
+		Level:     lvl,
+		AddSource: true,
+	}
+
 	if config.JSON {
-		logHandler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: lvl})
+		handler = slog.NewJSONHandler(os.Stdout, opts)
 	} else {
-		logHandler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: lvl})
+		handler = slog.NewTextHandler(os.Stdout, opts)
 	}
 
-	slog.SetDefault(slog.New(logHandler))
-
+	slog.SetDefault(slog.New(handler))
 	return nil
 }

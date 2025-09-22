@@ -36,6 +36,7 @@ func run() error {
 
 	if err := logger.Init(logger.Config{
 		Level: cfg.Logger.Level,
+		JSON:  cfg.Logger.JSON,
 	}); err != nil {
 		return fmt.Errorf("initializing logger: %w", err)
 	}

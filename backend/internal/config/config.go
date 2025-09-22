@@ -7,39 +7,54 @@ import (
 )
 
 type Config struct {
-	HttpServer struct {
-		Port            int    `mapstructure:"port"`
-		FrontendURL     string `mapstructure:"frontend_url"`
-		RedirectBaseURL string `mapstructure:"redirect_base_url"`
-	} `mapstructure:"httpserver"`
+	HttpServer HttpServerConfig `mapstructure:"httpserver"`
+	GoogleAuth GoogleAuthConfig `mapstructure:"googleauth"`
+	Logger     LoggerConfig     `mapstructure:"logger"`
+	Database   DatabaseConfig   `mapstructure:"database"`
+}
 
-	GoogleAuth struct {
-		ClientID     string `mapstructure:"client_id"`
-		ClientSecret string `mapstructure:"client_secret"`
-	} `mapstructure:"googleauth"`
+type HttpServerConfig struct {
+	Port            int    `mapstructure:"port" json:"port" yaml:"port"`
+	FrontendURL     string `mapstructure:"frontend_url" json:"frontend_url" yaml:"frontend_url"`
+	RedirectBaseURL string `mapstructure:"redirect_base_url" json:"redirect_base_url" yaml:"redirect_base_url"`
+}
 
-	Logger struct {
-		Level string `mapstructure:"level"`
-	} `mapstructure:"logger"`
+type GoogleAuthConfig struct {
+	ClientID     string `mapstructure:"client_id" json:"client_id" yaml:"client_id"`
+	ClientSecret string `mapstructure:"client_secret" json:"client_secret" yaml:"client_secret"`
+}
 
-	Database struct {
-		DSN string `mapstructure:"dsn"`
-	} `mapstructure:"database"`
+type LoggerConfig struct {
+	Level string `mapstructure:"level" json:"level" yaml:"level"`
+	JSON  bool   `mapstructure:"json" json:"json" yaml:"json"`
+}
+
+type DatabaseConfig struct {
+	DSN string `mapstructure:"dsn" json:"dsn" yaml:"dsn"`
 }
 
 func Load() (*Config, error) {
-	viper.SetConfigFile("config.yaml") // location of config file
-	viper.AutomaticEnv()               // yaml
+	v := viper.New()
 
-	viper.SetDefault("HttpServer.Port", 8080)
-	viper.SetDefault("Logger.Level", "info")
-
-	if err := viper.ReadInConfig(); err != nil {
-		fmt.Println("Warning: config.yaml not found, using defaults and env")
+	// try json first
+	v.SetConfigName("config")
+	v.SetConfigType("json")
+	v.AddConfigPath(".")
+	err := v.ReadInConfig()
+	if err != nil {
+		// try yaml next
+		v.SetConfigType("yaml")
+		if err2 := v.ReadInConfig(); err2 != nil {
+			fmt.Println("Warning: config.json and config.yaml not found, using defaults")
+		}
 	}
 
+	// defaults
+	v.SetDefault("HttpServer.Port", 8080)
+	v.SetDefault("Logger.Level", "info")
+
 	var cfg Config
-	if err := viper.Unmarshal(&cfg); err != nil {
+	if err := v.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("unable to decode config into struct: %w", err)
 	}
 
