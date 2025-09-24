@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"google-auth-demo/backend/internal/httpserver/middleware"
 	"google-auth-demo/backend/internal/service"
 )
 
@@ -46,6 +47,7 @@ func (s *Server) createMux() *http.ServeMux {
 	mux.HandleFunc("/login", s.handleLogin)
 	mux.HandleFunc("/oauth2callback", s.handleCallback)
 	mux.HandleFunc("/refresh", s.handleRefresh)
+	mux.Handle("/protected", middleware.AuthMiddleware(http.HandlerFunc(s.handleProtected)))
 
 	return mux
 }

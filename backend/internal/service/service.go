@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"google-auth-demo/backend/internal/jwt"
 	"net/url"
 	"time"
 )
@@ -105,9 +106,25 @@ func (s *Service) HandleCallback(code string) (string, error) {
 		return "", err
 	}
 
-	// back to frontend
-	userJson, _ := json.Marshal(userInfo)
-	return string(userJson), nil
+	// generate JWT
+	// import "internal/jwt" and "time"
+	jwtToken, err := jwt.GenerateToken(id, email, false, time.Hour*1) // 1h lifetime, isAdmin=false by default
+	if err != nil {
+		return "", fmt.Errorf("failed to generate JWT: %w", err)
+	}
+
+	// you can return both user info + jwt in JSON
+	response := map[string]interface{}{
+		"user":  userInfo,
+		"token": jwtToken,
+	}
+
+	respJson, err := json.Marshal(response)
+	if err != nil {
+		return "", err
+	}
+
+	return string(respJson), nil
 }
 
 func (s *Service) GetFrontendURL(userJson string) string {

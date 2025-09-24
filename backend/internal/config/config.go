@@ -11,6 +11,12 @@ type Config struct {
 	GoogleAuth GoogleAuthConfig `mapstructure:"googleauth"`
 	Logger     LoggerConfig     `mapstructure:"logger"`
 	Database   DatabaseConfig   `mapstructure:"database"`
+	JWT        JWTConfig        `mapstructure:"jwt"`
+}
+
+type JWTConfig struct {
+	Secret string `mapstructure:"secret" json:"secret" yaml:"secret"`
+	TTL    int    `mapstructure:"ttl" json:"ttl" yaml:"ttl"` // in minutes
 }
 
 type HttpServerConfig struct {
@@ -52,6 +58,8 @@ func Load() (*Config, error) {
 	// defaults
 	v.SetDefault("HttpServer.Port", 8080)
 	v.SetDefault("Logger.Level", "info")
+	viper.SetDefault("JWT.Secret", "super-secret-key")
+	viper.SetDefault("JWT.TTL", 60) // 60 minutes
 
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {

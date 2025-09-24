@@ -111,3 +111,21 @@ func (s *Server) GetProfile(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(profile)
 }
+
+// handleProtected is an example of a JWT-protected route
+func (s *Server) handleProtected(w http.ResponseWriter, r *http.Request) {
+	// values come from middleware (context)
+	userID, _ := r.Context().Value("user_id").(string)
+	email, _ := r.Context().Value("email").(string)
+	isAdmin, _ := r.Context().Value("is_admin").(bool)
+
+	resp := map[string]interface{}{
+		"message":  "This is a protected route",
+		"user_id":  userID,
+		"email":    email,
+		"is_admin": isAdmin,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
+}
