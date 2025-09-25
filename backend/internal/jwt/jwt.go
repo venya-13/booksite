@@ -6,13 +6,17 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtKey = []byte("super-secret-key") // patse secret from config
+var jwtKey = []byte("super-secret-key")
 
 type Claims struct {
 	GoogleID string `json:"google_id"`
 	Email    string `json:"email"`
 	IsAdmin  bool   `json:"is_admin"`
 	jwt.RegisteredClaims
+}
+
+func SetJWTKey(key string) {
+	jwtKey = []byte(key)
 }
 
 func GenerateToken(googleID, email string, isAdmin bool, duration time.Duration) (string, error) {

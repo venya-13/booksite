@@ -2,8 +2,6 @@ module google-auth-demo
 
 go 1.24.0
 
-require github.com/caarlos0/env v3.5.0+incompatible
-
 require (
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
@@ -27,7 +25,5 @@ require (
 require (
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/jackc/pgx/v5 v5.7.6
-	github.com/joho/godotenv v1.5.1
 	github.com/spf13/viper v1.21.0
-	github.com/stretchr/testify v1.11.1 // indirect
 )

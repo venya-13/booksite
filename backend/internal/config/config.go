@@ -42,7 +42,6 @@ type DatabaseConfig struct {
 func Load() (*Config, error) {
 	v := viper.New()
 
-	// try json first
 	v.SetConfigName("config")
 	v.SetConfigType("json")
 	v.AddConfigPath(".")

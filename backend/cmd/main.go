@@ -10,6 +10,7 @@ import (
 
 	"google-auth-demo/backend/internal/config"
 	"google-auth-demo/backend/internal/httpserver"
+	"google-auth-demo/backend/internal/jwt"
 	"google-auth-demo/backend/internal/logger"
 	"google-auth-demo/backend/internal/oauth/google"
 	"google-auth-demo/backend/internal/repo"
@@ -28,6 +29,8 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("loading config: %w", err)
 	}
+
+	jwt.SetJWTKey(cfg.JWT.Secret)
 
 	fmt.Printf("DEBUG: HttpServer Port=%d\n", cfg.HttpServer.Port)
 
