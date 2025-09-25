@@ -47,6 +47,7 @@ func (s *Server) createMux() *http.ServeMux {
 	mux.HandleFunc("/login", s.handleLogin)
 	mux.HandleFunc("/oauth2callback", s.handleCallback)
 	mux.HandleFunc("/refresh", s.handleRefresh)
+	mux.Handle("/api/google-profile", middleware.AuthMiddleware(http.HandlerFunc(s.handleGoogleProfile)))
 	mux.Handle("/protected", middleware.AuthMiddleware(http.HandlerFunc(s.handleProtected)))
 
 	return mux

@@ -52,21 +52,20 @@ func (s *Service) GetAuthURL() string {
 	return s.oauth.GetAuthURL()
 }
 
-func (s *Service) HandleCallback(code string) (string, error) {
+// HandleCallback exchanges the code for tokens, fetches profile, saves user, and generates JWT
+func (s *Service) HandleCallback(code string) (string, string, error) {
 	tokenData, err := s.oauth.ExchangeCode(code)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	userInfo, err := s.oauth.FetchProfile(tokenData.AccessToken)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	// get already exist
 	existingUser, _ := s.repo.GetUserByGoogleID(userInfo["id"].(string))
 
-	// update token info
 	userInfo["access_token"] = tokenData.AccessToken
 	userInfo["token_expiry"] = time.Now().Add(time.Duration(tokenData.ExpiresIn) * time.Second)
 
@@ -76,55 +75,21 @@ func (s *Service) HandleCallback(code string) (string, error) {
 		userInfo["refresh_token"] = existingUser["refresh_token"]
 	}
 
-	id, ok := userInfo["id"].(string)
-	if !ok || id == "" {
-		return "", fmt.Errorf("user id missing in profile")
-	}
+	id, _ := userInfo["id"].(string)
+	email, _ := userInfo["email"].(string)
 
-	email, ok := userInfo["email"].(string)
-	if !ok {
-		email = ""
-	}
-
-	name, ok := userInfo["name"].(string)
-	if !ok {
-		name = ""
-	}
-
-	picture, ok := userInfo["picture"].(string)
-	if !ok {
-		picture = ""
-	}
-
-	userInfo["id"] = id
-	userInfo["email"] = email
-	userInfo["name"] = name
-	userInfo["picture"] = picture
-
-	// save to database
 	if err := s.repo.SaveOrUpdate(userInfo); err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	// generate JWT
-	// import "internal/jwt" and "time"
-	jwtToken, err := jwt.GenerateToken(id, email, false, time.Hour*1) // 1h lifetime, isAdmin=false by default
+	jwtToken, err := jwt.GenerateToken(id, email, false, time.Hour*1)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate JWT: %w", err)
+		return "", "", fmt.Errorf("failed to generate JWT: %w", err)
 	}
 
-	// you can return both user info + jwt in JSON
-	response := map[string]interface{}{
-		"user":  userInfo,
-		"token": jwtToken,
-	}
+	userJson, _ := json.Marshal(userInfo)
 
-	respJson, err := json.Marshal(response)
-	if err != nil {
-		return "", err
-	}
-
-	return string(respJson), nil
+	return string(userJson), jwtToken, nil
 }
 
 func (s *Service) GetFrontendURL(userJson string) string {

@@ -10,13 +10,25 @@ import (
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var tokenStr string
+
 		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
+			tokenStr = strings.TrimPrefix(authHeader, "Bearer ")
+		}
+
+		// 2. If no header, check cookie
+		if tokenStr == "" {
+			cookie, err := r.Cookie("jwt")
+			if err == nil {
+				tokenStr = cookie.Value
+			}
+		}
+
+		if tokenStr == "" {
 			http.Error(w, "missing or invalid token", http.StatusUnauthorized)
 			return
 		}
-
-		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 
 		claims, err := jwt.ValidateToken(tokenStr)
 		if err != nil {
@@ -24,7 +36,6 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// You can save claims in context for handlers
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, "user_id", claims.GoogleID)
 		ctx = context.WithValue(ctx, "email", claims.Email)

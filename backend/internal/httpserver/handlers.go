@@ -23,19 +23,33 @@ func (s *Server) handleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userJson, err := s.svc.HandleCallback(code)
+	userJson, jwtToken, err := s.svc.HandleCallback(code)
 	if err != nil {
 		http.Error(w, "Callback error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	// Set JWT in a secure HttpOnly cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwt",
+		Value:    jwtToken,
+		Path:     "/",
+		HttpOnly: true, // cannot be accessed by JS
+		Secure:   true, // only sent via HTTPS
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   3600, // 1 hour
+	})
+
 	redirectURL := s.svc.GetFrontendURL(userJson)
 	http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
 }
 
-func (s *Server) handleSomeProtectedAPI(w http.ResponseWriter, r *http.Request) {
-	googleID := "some-google-id" // In real scenario, extract from JWT or session
-	// need jwt to funtion properly
+func (s *Server) handleGoogleProfile(w http.ResponseWriter, r *http.Request) {
+	googleID, _ := r.Context().Value("user_id").(string)
+	if googleID == "" {
+		http.Error(w, "missing user_id in context", http.StatusUnauthorized)
+		return
+	}
 
 	accessToken, err := s.svc.EnsureAccessToken(googleID)
 	if err != nil {
@@ -49,7 +63,11 @@ func (s *Server) handleSomeProtectedAPI(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	fmt.Fprintf(w, "User profile: %+v", profile)
+	// return JSON
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(profile); err != nil {
+		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+	}
 }
 
 func (s *Server) handleRefresh(w http.ResponseWriter, r *http.Request) {
@@ -112,9 +130,8 @@ func (s *Server) GetProfile(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(profile)
 }
 
-// handleProtected is an example of a JWT-protected route
 func (s *Server) handleProtected(w http.ResponseWriter, r *http.Request) {
-	// values come from middleware (context)
+	// values come from middleware
 	userID, _ := r.Context().Value("user_id").(string)
 	email, _ := r.Context().Value("email").(string)
 	isAdmin, _ := r.Context().Value("is_admin").(bool)
