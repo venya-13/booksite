@@ -1,7 +1,6 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"google-auth-demo/backend/internal/jwt"
 	"net/url"
@@ -30,9 +29,11 @@ type Repository interface {
 
 type (
 	Service struct {
-		oauth       OAuth
-		repo        Repository
-		frontendURL string
+		OAuth       OAuth
+		Repo        Repository
+		FrontendURL string
+		JWTTTL      time.Duration
+		RefreshTTL  time.Duration
 	}
 
 	Config struct {
@@ -40,31 +41,39 @@ type (
 	}
 )
 
-func New(config Config, oauth OAuth, repo Repository) *Service {
+type AuthResponse struct {
+	User         map[string]interface{} `json:"user"`
+	AccessToken  string                 `json:"access_token"`
+	RefreshToken string                 `json:"refresh_token"`
+	JWT          string                 `json:"jwt"`
+}
+
+func New(frontendURL string, oauth OAuth, repo Repository, jwtTTL, refreshTTL time.Duration) *Service {
 	return &Service{
-		frontendURL: config.FrontendURL,
-		oauth:       oauth,
-		repo:        repo,
+		FrontendURL: frontendURL,
+		OAuth:       oauth,
+		Repo:        repo,
+		JWTTTL:      jwtTTL,
+		RefreshTTL:  refreshTTL,
 	}
 }
 
 func (s *Service) GetAuthURL() string {
-	return s.oauth.GetAuthURL()
+	return s.OAuth.GetAuthURL()
 }
 
-// HandleCallback exchanges the code for tokens, fetches profile, saves user, and generates JWT
-func (s *Service) HandleCallback(code string) (string, string, error) {
-	tokenData, err := s.oauth.ExchangeCode(code)
+func (s *Service) HandleCallback(code string) (*AuthResponse, error) {
+	tokenData, err := s.OAuth.ExchangeCode(code)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 
-	userInfo, err := s.oauth.FetchProfile(tokenData.AccessToken)
+	userInfo, err := s.OAuth.FetchProfile(tokenData.AccessToken)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 
-	existingUser, _ := s.repo.GetUserByGoogleID(userInfo["id"].(string))
+	existingUser, _ := s.Repo.GetUserByGoogleID(userInfo["id"].(string))
 
 	userInfo["access_token"] = tokenData.AccessToken
 	userInfo["token_expiry"] = time.Now().Add(time.Duration(tokenData.ExpiresIn) * time.Second)
@@ -78,32 +87,49 @@ func (s *Service) HandleCallback(code string) (string, string, error) {
 	id, _ := userInfo["id"].(string)
 	email, _ := userInfo["email"].(string)
 
-	if err := s.repo.SaveOrUpdate(userInfo); err != nil {
-		return "", "", err
+	if err := s.Repo.SaveOrUpdate(userInfo); err != nil {
+		return nil, err
 	}
 
-	jwtToken, err := jwt.GenerateToken(id, email, false, time.Hour*1)
+	jwtToken, _, err := s.GenerateTokens(id, email, false)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to generate JWT: %w", err)
+		return nil, fmt.Errorf("failed to generate JWT: %w", err)
 	}
 
-	userJson, _ := json.Marshal(userInfo)
+	resp := &AuthResponse{
+		User:         userInfo,
+		AccessToken:  tokenData.AccessToken,
+		RefreshToken: userInfo["refresh_token"].(string),
+		JWT:          jwtToken,
+	}
 
-	return string(userJson), jwtToken, nil
+	return resp, nil
 }
 
-func (s *Service) GetFrontendURL(userJson string) string {
-	return s.frontendURL + "?user=" + url.QueryEscape(userJson)
+func (s *Service) GetFrontendURL(jwtToken string) string {
+	return s.FrontendURL + "?token=" + url.QueryEscape(jwtToken)
 }
 
 func (s *Service) EnsureAccessToken(googleID string) (string, error) {
-	user, err := s.repo.GetUserByGoogleID(googleID)
+	user, err := s.Repo.GetUserByGoogleID(googleID)
 	if err != nil {
 		return "", err
 	}
 
-	expiry := user["token_expiry"].(time.Time)
-	accessToken := user["access_token"].(string)
+	expiryInterface, ok := user["token_expiry"]
+	if !ok {
+		return "", fmt.Errorf("token expiry missing for user %s", googleID)
+	}
+
+	expiry, ok := expiryInterface.(time.Time)
+	if !ok {
+		return "", fmt.Errorf("invalid token expiry type for user %s", googleID)
+	}
+
+	accessToken, ok := user["access_token"].(string)
+	if !ok {
+		return "", fmt.Errorf("invalid access token type for user %s", googleID)
+	}
 
 	// if token is still valid, return it
 	if time.Now().Before(expiry) {
@@ -116,7 +142,7 @@ func (s *Service) EnsureAccessToken(googleID string) (string, error) {
 		return "", fmt.Errorf("no refresh token available for user %s", googleID)
 	}
 
-	newToken, err := s.oauth.RefreshAccessToken(refreshToken)
+	newToken, err := s.OAuth.RefreshAccessToken(refreshToken)
 	if err != nil {
 		return "", err
 	}
@@ -131,7 +157,7 @@ func (s *Service) EnsureAccessToken(googleID string) (string, error) {
 	user["refresh_token"] = newToken.RefreshToken
 	user["token_expiry"] = time.Now().Add(time.Duration(newToken.ExpiresIn) * time.Second)
 
-	if err := s.repo.SaveOrUpdate(user); err != nil {
+	if err := s.Repo.SaveOrUpdate(user); err != nil {
 		return "", err
 	}
 
@@ -139,9 +165,37 @@ func (s *Service) EnsureAccessToken(googleID string) (string, error) {
 }
 
 func (s *Service) FetchProfile(accessToken string) (map[string]interface{}, error) {
-	return s.oauth.FetchProfile(accessToken)
+	return s.OAuth.FetchProfile(accessToken)
 }
 
 func (s *Service) SaveUser(user map[string]interface{}) error {
-	return s.repo.SaveOrUpdate(user)
+	return s.Repo.SaveOrUpdate(user)
+}
+
+func (s *Service) GenerateTokens(googleID, email string, isAdmin bool) (string, string, error) {
+	accessToken, err := jwt.GenerateToken(googleID, email, isAdmin, s.JWTTTL)
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshToken, err := jwt.GenerateRefreshToken(googleID, s.RefreshTTL)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, nil
+}
+
+func (s *Service) RefreshJWT(refreshToken string) (string, error) {
+	claims, err := jwt.ValidateToken(refreshToken)
+	if err != nil {
+		return "", fmt.Errorf("invalid refresh token: %w", err)
+	}
+
+	newAccessToken, _, err := s.GenerateTokens(claims.GoogleID, claims.Email, claims.IsAdmin)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate new JWT: %w", err)
+	}
+
+	return newAccessToken, nil
 }

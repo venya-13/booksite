@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"google-auth-demo/backend/internal/config"
 	"google-auth-demo/backend/internal/httpserver"
@@ -66,9 +67,16 @@ func start(ctx context.Context, cfg *config.Config) error {
 		return fmt.Errorf("init repo: %w", err)
 	}
 
-	svc := service.New(service.Config{
-		FrontendURL: cfg.HttpServer.FrontendURL,
-	}, oauthGoogle, repository)
+	jwtTTL := time.Duration(cfg.JWT.TTL) * time.Minute
+	refreshTTL := time.Duration(cfg.JWT.RefreshTTL) * time.Minute
+
+	svc := service.New(
+		cfg.HttpServer.FrontendURL,
+		oauthGoogle,
+		repository,
+		jwtTTL,
+		refreshTTL,
+	)
 
 	httpServerCfg := httpserver.Config{
 		Port:            cfg.HttpServer.Port,

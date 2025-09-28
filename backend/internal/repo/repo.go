@@ -40,9 +40,6 @@ func (r *PostgresRepo) SaveOrUpdate(user map[string]interface{}) error {
 	refreshToken, _ := user["refresh_token"].(string)
 	tokenExpiry, _ := user["token_expiry"].(time.Time)
 
-	// here we are waiting that token_expiry is passed as time.Time
-	tokenExpiry = user["token_expiry"].(time.Time)
-
 	_, err := r.db.Exec(ctx, `
 		INSERT INTO users (google_id, email, name, picture, access_token, refresh_token, token_expiry)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)

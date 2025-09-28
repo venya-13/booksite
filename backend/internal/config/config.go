@@ -15,8 +15,9 @@ type Config struct {
 }
 
 type JWTConfig struct {
-	Secret string `mapstructure:"secret" json:"secret" yaml:"secret"`
-	TTL    int    `mapstructure:"ttl" json:"ttl" yaml:"ttl"` // in minutes
+	Secret     string `mapstructure:"secret" json:"secret" yaml:"secret"`
+	TTL        int    `mapstructure:"ttl" json:"ttl" yaml:"ttl"` // in minutes
+	RefreshTTL int    `mapstructure:"refresh_ttl" json:"refresh_ttl" yaml:"refresh_ttl"`
 }
 
 type HttpServerConfig struct {
@@ -58,7 +59,8 @@ func Load() (*Config, error) {
 	v.SetDefault("HttpServer.Port", 8080)
 	v.SetDefault("Logger.Level", "info")
 	viper.SetDefault("JWT.Secret", "super-secret-key")
-	viper.SetDefault("JWT.TTL", 60) // 60 minutes
+	viper.SetDefault("JWT.TTL", 60)          // 60 minutes
+	viper.SetDefault("JWT.RefreshTTL", 1440) // 1 day
 
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {

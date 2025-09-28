@@ -23,25 +23,24 @@ func (s *Server) handleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userJson, jwtToken, err := s.svc.HandleCallback(code)
+	resp, err := s.svc.HandleCallback(code)
 	if err != nil {
 		http.Error(w, "Callback error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Set JWT in a secure HttpOnly cookie
 	http.SetCookie(w, &http.Cookie{
 		Name:     "jwt",
-		Value:    jwtToken,
+		Value:    resp.JWT,
 		Path:     "/",
-		HttpOnly: true, // cannot be accessed by JS
-		Secure:   true, // only sent via HTTPS
+		HttpOnly: true,
+		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
-		MaxAge:   3600, // 1 hour
+		MaxAge:   int(s.svc.JWTTTL.Seconds()),
 	})
 
-	redirectURL := s.svc.GetFrontendURL(userJson)
-	http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
+	redirectURL := s.svc.GetFrontendURL(resp.JWT)
+	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }
 
 func (s *Server) handleGoogleProfile(w http.ResponseWriter, r *http.Request) {
@@ -145,4 +144,31 @@ func (s *Server) handleProtected(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func (s *Server) handleJWTRefresh(w http.ResponseWriter, r *http.Request) {
+	refreshToken := r.URL.Query().Get("refresh_token")
+	if refreshToken == "" {
+		http.Error(w, "refresh_token required", http.StatusBadRequest)
+		return
+	}
+
+	newJWT, err := s.svc.RefreshJWT(refreshToken)
+	if err != nil {
+		http.Error(w, "invalid refresh token: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwt",
+		Value:    newJWT,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   int(s.svc.JWTTTL.Seconds()),
+	})
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message": "JWT refreshed successfully"}`))
 }
