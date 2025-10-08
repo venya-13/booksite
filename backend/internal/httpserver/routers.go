@@ -47,6 +47,7 @@ func (s *Server) createMux() *http.ServeMux {
 	mux.HandleFunc("/login", s.handleLogin)
 	mux.HandleFunc("/oauth2callback", s.handleCallback)
 	mux.HandleFunc("/refresh", s.handleRefresh)
+	mux.HandleFunc("/api/auth/refresh", s.handleJWTRefresh)
 	mux.Handle("/api/google-profile", middleware.AuthMiddleware(http.HandlerFunc(s.handleGoogleProfile)))
 	mux.Handle("/protected", middleware.AuthMiddleware(http.HandlerFunc(s.handleProtected)))
 
@@ -54,22 +55,24 @@ func (s *Server) createMux() *http.ServeMux {
 }
 
 func (s *Server) Run(ctx context.Context) error {
-	slog.Info("server starting", slog.String("addr", s.s.Addr))
+	slog.Info("HTTP server starting", slog.String("address", s.s.Addr))
 
 	go func() {
 		<-ctx.Done()
+		slog.Warn("Shutdown signal received, stopping server...")
+
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
 		if err := s.s.Shutdown(shutdownCtx); err != nil {
-			slog.Error("shutting down server", slog.String("error", err.Error()))
+			slog.Error("Error during server shutdown", slog.String("error", err.Error()))
+		} else {
+			slog.Info("Server shutdown completed cleanly")
 		}
 	}()
 
-	if err := s.s.ListenAndServe(); err != nil {
-		if !errors.Is(err, http.ErrServerClosed) {
-			return fmt.Errorf("http server close: %w", err)
-		}
+	if err := s.s.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return fmt.Errorf("http server error: %w", err)
 	}
 
 	return nil

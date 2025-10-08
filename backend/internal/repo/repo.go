@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -40,6 +41,12 @@ func (r *PostgresRepo) SaveOrUpdate(user map[string]interface{}) error {
 	refreshToken, _ := user["refresh_token"].(string)
 	tokenExpiry, _ := user["token_expiry"].(time.Time)
 
+	slog.Info("Saving or updating user in database",
+		slog.String("google_id", googleID),
+		slog.String("email", email),
+		slog.String("name", name),
+	)
+
 	_, err := r.db.Exec(ctx, `
 		INSERT INTO users (google_id, email, name, picture, access_token, refresh_token, token_expiry)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -53,7 +60,16 @@ func (r *PostgresRepo) SaveOrUpdate(user map[string]interface{}) error {
 		    updated_at = CURRENT_TIMESTAMP;
 	`, googleID, email, name, picture, accessToken, refreshToken, tokenExpiry)
 
-	return err
+	if err != nil {
+		slog.Error("DB SaveOrUpdate failed",
+			slog.String("google_id", googleID),
+			slog.String("error", err.Error()),
+		)
+		return err
+	}
+
+	slog.Info("User saved successfully", slog.String("google_id", googleID))
+	return nil
 }
 
 func (r *PostgresRepo) GetRefreshTokenByGoogleID(googleID string) (string, error) {

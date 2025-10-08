@@ -3,6 +3,7 @@ package httpserver
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 )
 
@@ -19,27 +20,30 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleCallback(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	if code == "" {
+		slog.Warn("Missing code in callback", slog.String("url", r.URL.String()))
 		http.Error(w, "No code found in callback", http.StatusBadRequest)
 		return
 	}
 
+	slog.Info("OAuth callback received", slog.String("code", code[:6]+"...")) // log only first 6 chars for privacy
+
 	resp, err := s.svc.HandleCallback(code)
 	if err != nil {
-		http.Error(w, "Callback error: "+err.Error(), http.StatusInternalServerError)
+		slog.Error("HandleCallback failed", slog.String("error", err.Error()))
+		http.Error(w, "Callback error", http.StatusInternalServerError)
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "jwt",
-		Value:    resp.JWT,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-		MaxAge:   int(s.svc.JWTTTL.Seconds()),
-	})
+	id, _ := resp.User["id"].(string)
+	email, _ := resp.User["email"].(string)
+	slog.Info("User authenticated successfully",
+		slog.String("google_id", id),
+		slog.String("email", email),
+	)
 
 	redirectURL := s.svc.GetFrontendURL(resp.JWT)
+	slog.Info("Redirecting user to frontend", slog.String("url", redirectURL))
+
 	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }
 
@@ -147,26 +151,38 @@ func (s *Server) handleProtected(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleJWTRefresh(w http.ResponseWriter, r *http.Request) {
-	refreshToken := r.URL.Query().Get("refresh_token")
-	if refreshToken == "" {
-		http.Error(w, "refresh_token required", http.StatusBadRequest)
+
+	cookie, err := r.Cookie("refresh_token")
+	if err != nil || cookie.Value == "" {
+		http.Error(w, "refresh_token missing", http.StatusUnauthorized)
 		return
 	}
 
-	newJWT, err := s.svc.RefreshJWT(refreshToken)
+	resp, err := s.svc.RefreshJWT(cookie.Value)
 	if err != nil {
 		http.Error(w, "invalid refresh token: "+err.Error(), http.StatusUnauthorized)
 		return
 	}
 
+	// set new tokens in secure cookies
 	http.SetCookie(w, &http.Cookie{
 		Name:     "jwt",
-		Value:    newJWT,
+		Value:    resp.AccessToken,
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   int(s.svc.JWTTTL.Seconds()),
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    resp.RefreshToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   int(s.svc.RefreshTTL.Seconds()),
 	})
 
 	w.WriteHeader(http.StatusOK)

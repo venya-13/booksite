@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"google-auth-demo/backend/internal/jwt"
+	"log/slog"
 	"net/url"
 	"time"
 )
@@ -63,47 +64,49 @@ func (s *Service) GetAuthURL() string {
 }
 
 func (s *Service) HandleCallback(code string) (*AuthResponse, error) {
+	slog.Info("Handling OAuth callback")
+
 	tokenData, err := s.OAuth.ExchangeCode(code)
 	if err != nil {
+		slog.Error("Failed to exchange code", slog.String("error", err.Error()))
 		return nil, err
 	}
 
 	userInfo, err := s.OAuth.FetchProfile(tokenData.AccessToken)
 	if err != nil {
+		slog.Error("Failed to fetch Google profile", slog.String("error", err.Error()))
 		return nil, err
-	}
-
-	existingUser, _ := s.Repo.GetUserByGoogleID(userInfo["id"].(string))
-
-	userInfo["access_token"] = tokenData.AccessToken
-	userInfo["token_expiry"] = time.Now().Add(time.Duration(tokenData.ExpiresIn) * time.Second)
-
-	if tokenData.RefreshToken != "" {
-		userInfo["refresh_token"] = tokenData.RefreshToken
-	} else if existingUser != nil {
-		userInfo["refresh_token"] = existingUser["refresh_token"]
 	}
 
 	id, _ := userInfo["id"].(string)
 	email, _ := userInfo["email"].(string)
+	slog.Info("Fetched Google profile", slog.String("google_id", id), slog.String("email", email))
+
+	userInfo["access_token"] = tokenData.AccessToken
+	userInfo["refresh_token"] = tokenData.RefreshToken
+	userInfo["token_expiry"] = time.Now().Add(time.Duration(tokenData.ExpiresIn) * time.Second)
 
 	if err := s.Repo.SaveOrUpdate(userInfo); err != nil {
+		slog.Error("DB save/update failed", slog.String("google_id", id), slog.String("error", err.Error()))
 		return nil, err
 	}
 
+	slog.Info("User saved to database", slog.String("google_id", id))
+
 	jwtToken, _, err := s.GenerateTokens(id, email, false)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate JWT: %w", err)
+		slog.Error("Failed to generate JWT", slog.String("google_id", id), slog.String("error", err.Error()))
+		return nil, err
 	}
 
-	resp := &AuthResponse{
+	slog.Info("JWT token generated", slog.String("google_id", id))
+
+	return &AuthResponse{
 		User:         userInfo,
 		AccessToken:  tokenData.AccessToken,
 		RefreshToken: userInfo["refresh_token"].(string),
 		JWT:          jwtToken,
-	}
-
-	return resp, nil
+	}, nil
 }
 
 func (s *Service) GetFrontendURL(jwtToken string) string {
@@ -186,16 +189,19 @@ func (s *Service) GenerateTokens(googleID, email string, isAdmin bool) (string, 
 	return accessToken, refreshToken, nil
 }
 
-func (s *Service) RefreshJWT(refreshToken string) (string, error) {
+func (s *Service) RefreshJWT(refreshToken string) (*AuthResponse, error) {
 	claims, err := jwt.ValidateToken(refreshToken)
 	if err != nil {
-		return "", fmt.Errorf("invalid refresh token: %w", err)
+		return nil, fmt.Errorf("invalid refresh token: %w", err)
 	}
 
-	newAccessToken, _, err := s.GenerateTokens(claims.GoogleID, claims.Email, claims.IsAdmin)
+	newAccessToken, newRefreshToken, err := s.GenerateTokens(claims.GoogleID, claims.Email, claims.IsAdmin)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate new JWT: %w", err)
+		return nil, fmt.Errorf("failed to generate new tokens: %w", err)
 	}
 
-	return newAccessToken, nil
+	return &AuthResponse{
+		AccessToken:  newAccessToken,
+		RefreshToken: newRefreshToken,
+	}, nil
 }
