@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 )
 
 func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
@@ -151,20 +152,32 @@ func (s *Server) handleProtected(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleJWTRefresh(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
 
 	cookie, err := r.Cookie("refresh_token")
 	if err != nil || cookie.Value == "" {
+		slog.Warn("Refresh token missing",
+			slog.String("remote_ip", r.RemoteAddr),
+			slog.String("path", r.URL.Path),
+		)
 		http.Error(w, "refresh_token missing", http.StatusUnauthorized)
 		return
 	}
 
-	resp, err := s.svc.RefreshJWT(cookie.Value)
+	refreshToken := cookie.Value
+
+	resp, err := s.svc.RefreshJWT(refreshToken)
 	if err != nil {
+		slog.Error("Failed to refresh JWT",
+			slog.String("remote_ip", r.RemoteAddr),
+			slog.String("error", err.Error()),
+			slog.String("path", r.URL.Path),
+			slog.Duration("elapsed", time.Since(start)),
+		)
 		http.Error(w, "invalid refresh token: "+err.Error(), http.StatusUnauthorized)
 		return
 	}
 
-	// set new tokens in secure cookies
 	http.SetCookie(w, &http.Cookie{
 		Name:     "jwt",
 		Value:    resp.AccessToken,
@@ -174,7 +187,6 @@ func (s *Server) handleJWTRefresh(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   int(s.svc.JWTTTL.Seconds()),
 	})
-
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    resp.RefreshToken,
@@ -184,6 +196,12 @@ func (s *Server) handleJWTRefresh(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   int(s.svc.RefreshTTL.Seconds()),
 	})
+
+	slog.Info("JWT successfully refreshed",
+		slog.String("remote_ip", r.RemoteAddr),
+		slog.String("path", r.URL.Path),
+		slog.Duration("elapsed", time.Since(start)),
+	)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message": "JWT refreshed successfully"}`))

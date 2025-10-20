@@ -31,19 +31,26 @@ func run() error {
 		return fmt.Errorf("loading config: %w", err)
 	}
 
-	jwt.SetJWTKey(cfg.JWT.Secret)
-
-	fmt.Printf("DEBUG: HttpServer Port=%d\n", cfg.HttpServer.Port)
-
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
-
 	if err := logger.Init(logger.Config{
 		Level: cfg.Logger.Level,
 		JSON:  cfg.Logger.JSON,
 	}); err != nil {
 		return fmt.Errorf("initializing logger: %w", err)
 	}
+
+	slog.Info("Logger initialized", slog.String("level", cfg.Logger.Level))
+
+	jwt.SetJWTKey(cfg.JWT.Secret)
+	slog.Info("JWT secret set")
+
+	slog.Info("Starting application",
+		slog.Int("port", cfg.HttpServer.Port),
+		slog.String("frontend_url", cfg.HttpServer.FrontendURL),
+		slog.String("redirect_base", cfg.HttpServer.RedirectBaseURL),
+	)
+
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
 
 	return start(ctx, cfg)
 }
