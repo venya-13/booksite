@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/spf13/viper"
 )
@@ -44,27 +45,24 @@ func Load() (*Config, error) {
 	v := viper.New()
 
 	v.SetConfigName("config")
-	v.SetConfigType("json")
+	v.SetConfigType("yaml")
 	v.AddConfigPath(".")
-	err := v.ReadInConfig()
-	if err != nil {
-		// try yaml next
-		v.SetConfigType("yaml")
-		if err2 := v.ReadInConfig(); err2 != nil {
-			fmt.Println("Warning: config.json and config.yaml not found, using defaults")
-		}
-	}
+	v.AddConfigPath("./..")
+	v.AddConfigPath("./configs")
 
-	// defaults
-	v.SetDefault("HttpServer.Port", 8080)
-	v.SetDefault("Logger.Level", "info")
-	viper.SetDefault("JWT.Secret", "super-secret-key")
-	viper.SetDefault("JWT.TTL", 60)          // 60 minutes
-	viper.SetDefault("JWT.RefreshTTL", 1440) // 1 day
+	if err := v.ReadInConfig(); err != nil {
+		slog.Warn("Config file not found, trying JSON", "error", err)
+		v.SetConfigType("json")
+		if err := v.ReadInConfig(); err != nil {
+			slog.Warn("Config JSON file not found, using defaults", "error", err)
+		}
+	} else {
+		slog.Info("Config file loaded", "file", v.ConfigFileUsed())
+	}
 
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
-		return nil, fmt.Errorf("unable to decode config into struct: %w", err)
+		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
 	return &cfg, nil

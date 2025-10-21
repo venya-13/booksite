@@ -31,6 +31,13 @@ func run() error {
 		return fmt.Errorf("loading config: %w", err)
 	}
 
+	slog.Info("Config values",
+		"port", cfg.HttpServer.Port,
+		"frontend_url", cfg.HttpServer.FrontendURL,
+		"redirect_base_url", cfg.HttpServer.RedirectBaseURL,
+		"jwt_secret", cfg.JWT.Secret,
+	)
+
 	if err := logger.Init(logger.Config{
 		Level: cfg.Logger.Level,
 		JSON:  cfg.Logger.JSON,
