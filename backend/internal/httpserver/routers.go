@@ -40,18 +40,26 @@ func New(config Config, svc *service.Service) *Server {
 	return &srv
 }
 
-func (s *Server) createMux() *http.ServeMux {
+func (s *Server) createMux() http.Handler {
 	mux := http.NewServeMux()
 
+	// --- AUTH ---
 	mux.HandleFunc("/", s.handleHome)
 	mux.HandleFunc("/login", s.handleLogin)
 	mux.HandleFunc("/oauth2callback", s.handleCallback)
 	mux.HandleFunc("/refresh", s.handleRefresh)
 	mux.HandleFunc("/api/auth/refresh", s.handleJWTRefresh)
+
+	// --- GOOGLE PROFILE + PROTECTED ROUTES ---
 	mux.Handle("/api/google-profile", middleware.AuthMiddleware(http.HandlerFunc(s.handleGoogleProfile)))
 	mux.Handle("/protected", middleware.AuthMiddleware(http.HandlerFunc(s.handleProtected)))
 
-	return mux
+	// --- CATEGORIES ---
+	mux.HandleFunc("/api/categories", s.handleGetCategories)
+	mux.Handle("/api/categories/create", middleware.AuthMiddleware(http.HandlerFunc(s.handleCreateCategory)))
+	mux.Handle("/api/categories/delete", middleware.AuthMiddleware(http.HandlerFunc(s.handleDeleteCategory)))
+
+	return withCORS(mux)
 }
 
 func (s *Server) Run(ctx context.Context) error {
@@ -76,4 +84,19 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func withCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }

@@ -1,8 +1,10 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"google-auth-demo/backend/internal/jwt"
+	"google-auth-demo/backend/internal/repo"
 	"log/slog"
 	"net/url"
 	"time"
@@ -26,6 +28,10 @@ type OAuth interface {
 type Repository interface {
 	SaveOrUpdate(user map[string]interface{}) error
 	GetUserByGoogleID(googleID string) (map[string]interface{}, error)
+
+	GetAllCategories(ctx context.Context) ([]repo.Category, error)
+	CreateCategory(ctx context.Context, name string) error
+	DeleteCategory(ctx context.Context, id int) error
 }
 
 type (
@@ -217,4 +223,16 @@ func (s *Service) RefreshJWT(refreshToken string) (*AuthResponse, error) {
 		AccessToken:  newAccessToken,
 		RefreshToken: newRefreshToken,
 	}, nil
+}
+
+func (s *Service) GetAllCategories(ctx context.Context) ([]repo.Category, error) {
+	return s.Repo.GetAllCategories(ctx)
+}
+
+func (s *Service) CreateCategory(ctx context.Context, name string) error {
+	return s.Repo.CreateCategory(ctx, name)
+}
+
+func (s *Service) DeleteCategory(ctx context.Context, id int) error {
+	return s.Repo.DeleteCategory(ctx, id)
 }
