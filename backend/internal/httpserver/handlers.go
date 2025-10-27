@@ -184,7 +184,7 @@ func (s *Server) handleJWTRefresh(w http.ResponseWriter, r *http.Request) {
 		Value:    resp.AccessToken,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   false,
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   int(s.svc.JWTTTL.Seconds()),
 	})
@@ -193,7 +193,7 @@ func (s *Server) handleJWTRefresh(w http.ResponseWriter, r *http.Request) {
 		Value:    resp.RefreshToken,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   false,
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   int(s.svc.RefreshTTL.Seconds()),
 	})
@@ -245,4 +245,37 @@ func (s *Server) handleDeleteCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) handleRenameCategory(w http.ResponseWriter, r *http.Request) {
+
+	idStr := r.URL.Query().Get("id")
+	if idStr == "" {
+		http.Error(w, "missing category id", http.StatusBadRequest)
+		return
+	}
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "invalid category id", http.StatusBadRequest)
+		return
+	}
+
+	var body struct {
+		Name string `json:"name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	if err := s.svc.RenameCategory(ctx, id, body.Name); err != nil {
+		http.Error(w, "failed to rename category: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"status": "ok",
+	})
 }

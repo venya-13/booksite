@@ -10,6 +10,12 @@ import (
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if r.Method == http.MethodOptions {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		var tokenStr string
 
 		authHeader := r.Header.Get("Authorization")
@@ -17,7 +23,6 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			tokenStr = strings.TrimPrefix(authHeader, "Bearer ")
 		}
 
-		// 2. If no header, check cookie
 		if tokenStr == "" {
 			cookie, err := r.Cookie("jwt")
 			if err == nil {

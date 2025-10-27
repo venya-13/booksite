@@ -56,6 +56,7 @@ func (s *Server) createMux() http.Handler {
 
 	// --- CATEGORIES ---
 	mux.HandleFunc("/api/categories", s.handleGetCategories)
+	mux.Handle("/api/categories/rename", middleware.AuthMiddleware(http.HandlerFunc(s.handleRenameCategory)))
 	mux.Handle("/api/categories/create", middleware.AuthMiddleware(http.HandlerFunc(s.handleCreateCategory)))
 	mux.Handle("/api/categories/delete", middleware.AuthMiddleware(http.HandlerFunc(s.handleDeleteCategory)))
 
@@ -89,7 +90,7 @@ func (s *Server) Run(ctx context.Context) error {
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 

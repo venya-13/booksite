@@ -32,6 +32,8 @@ type Repository interface {
 	GetAllCategories(ctx context.Context) ([]repo.Category, error)
 	CreateCategory(ctx context.Context, name string) error
 	DeleteCategory(ctx context.Context, id int) error
+
+	RenameCategory(ctx context.Context, id int, name string) error
 }
 
 type (
@@ -235,4 +237,8 @@ func (s *Service) CreateCategory(ctx context.Context, name string) error {
 
 func (s *Service) DeleteCategory(ctx context.Context, id int) error {
 	return s.Repo.DeleteCategory(ctx, id)
+}
+
+func (s *Service) RenameCategory(ctx context.Context, id int, name string) error {
+	return s.Repo.RenameCategory(ctx, id, name)
 }
