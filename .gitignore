@@ -5,6 +5,7 @@
 /bin/
 /build/
 /out/
+/uploads
 *.exe
 *.exe~
 *.dll
