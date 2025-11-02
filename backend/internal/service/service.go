@@ -34,6 +34,13 @@ type Repository interface {
 	DeleteCategory(ctx context.Context, id int) error
 
 	RenameCategory(ctx context.Context, id int, name string) error
+
+	CreateBook(ctx context.Context, b repo.Book, categoryIDs []int) (int, error)
+	GetAllBooks(ctx context.Context) ([]repo.Book, error)
+	GetBookByID(ctx context.Context, id int) (repo.Book, error)
+	UpdateBook(ctx context.Context, b repo.Book, categoryIDs []int) error
+	DeleteBook(ctx context.Context, id int) error
+	GetBooksByCategory(ctx context.Context, categoryID int) ([]repo.Book, error)
 }
 
 type (
@@ -241,4 +248,32 @@ func (s *Service) DeleteCategory(ctx context.Context, id int) error {
 
 func (s *Service) RenameCategory(ctx context.Context, id int, name string) error {
 	return s.Repo.RenameCategory(ctx, id, name)
+}
+
+func (s *Service) CreateBook(ctx context.Context, b repo.Book, catIDs []int) (int, error) {
+	return s.Repo.CreateBook(ctx, b, catIDs)
+}
+
+func (s *Service) GetAllBooks(ctx context.Context) ([]repo.Book, error) {
+	return s.Repo.GetAllBooks(ctx)
+}
+
+func (s *Service) GetBookByID(ctx context.Context, id int) (*repo.Book, error) {
+	b, err := s.Repo.GetBookByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return &b, nil
+}
+
+func (s *Service) UpdateBook(ctx context.Context, book repo.Book, categoryIDs []int) error {
+	return s.Repo.UpdateBook(ctx, book, categoryIDs)
+}
+
+func (s *Service) DeleteBook(ctx context.Context, id int) error {
+	return s.Repo.DeleteBook(ctx, id)
+}
+
+func (s *Service) GetBooksByCategory(ctx context.Context, categoryID int) ([]repo.Book, error) {
+	return s.Repo.GetBooksByCategory(ctx, categoryID)
 }

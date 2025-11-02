@@ -60,6 +60,20 @@ func (s *Server) createMux() http.Handler {
 	mux.Handle("/api/categories/create", middleware.AuthMiddleware(http.HandlerFunc(s.handleCreateCategory)))
 	mux.Handle("/api/categories/delete", middleware.AuthMiddleware(http.HandlerFunc(s.handleDeleteCategory)))
 
+	// --- BOOKS ---
+	mux.Handle("/api/books/create", middleware.AuthMiddleware(http.HandlerFunc(s.handleCreateBook))) // POST
+	mux.HandleFunc("/api/books", s.handleGetBooks)                                                   // GET list
+	mux.HandleFunc("/api/books/get", s.handleGetBook)                                                // GET single by id
+	mux.Handle("/api/books/update", middleware.AuthMiddleware(http.HandlerFunc(s.handleUpdateBook))) // PUT
+	mux.Handle("/api/books/delete", middleware.AuthMiddleware(http.HandlerFunc(s.handleDeleteBook))) // DELETE
+	mux.HandleFunc("/api/books/by_category", s.handleGetBooksByCategory)                             // public
+
+	// Serve book cover images
+	mux.Handle("/covers/", http.StripPrefix("/covers/", http.FileServer(http.Dir("./uploads/covers"))))
+
+	// upload cover (auth protected)
+	mux.Handle("/api/books/cover", middleware.AuthMiddleware(http.HandlerFunc(s.UploadBookCover)))
+
 	return withCORS(mux)
 }
 
