@@ -5,7 +5,6 @@
 /bin/
 /build/
 /out/
-/uploads
 *.exe
 *.exe~
 *.dll
@@ -25,3 +24,5 @@ Thumbs.db
 
 config.yaml
 config.json
+
+/uploads
