@@ -512,3 +512,48 @@ func (s *Server) UploadBookCover(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(fmt.Sprintf(`{"cover_url":"%s"}`, publicPath)))
 }
+
+func (s *Server) handleGetCategoriesWithBooks(w http.ResponseWriter, r *http.Request) {
+	// call service that returns categories with books
+	cats, err := s.svc.GetCategoriesWithBooks(r.Context())
+	if err != nil {
+		http.Error(w, "failed to get categories: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(cats)
+}
+
+func (s *Server) handleGetUncategorizedBooks(w http.ResponseWriter, r *http.Request) {
+	books, err := s.svc.GetUncategorizedBooks(r.Context())
+	if err != nil {
+		http.Error(w, "failed to get uncategorized books: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(books)
+}
+
+func (s *Server) handleAssignBookToCategory(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut && r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var body struct {
+		BookID     int `json:"bookId"`
+		CategoryID int `json:"categoryId"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, "invalid body: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	if body.BookID == 0 || body.CategoryID == 0 {
+		http.Error(w, "bookId and categoryId required", http.StatusBadRequest)
+		return
+	}
+	if err := s.svc.AssignBookToCategory(r.Context(), body.BookID, body.CategoryID); err != nil {
+		http.Error(w, "failed to assign: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}

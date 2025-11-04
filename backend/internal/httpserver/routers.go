@@ -74,6 +74,13 @@ func (s *Server) createMux() http.Handler {
 	// upload cover (auth protected)
 	mux.Handle("/api/books/cover", middleware.AuthMiddleware(http.HandlerFunc(s.UploadBookCover)))
 
+	// existing
+	mux.HandleFunc("/api/categories/with-books", s.handleGetCategoriesWithBooks) // will now return categories-with-books
+	// add uncategorized
+	mux.HandleFunc("/api/books/uncategorized", s.handleGetUncategorizedBooks)
+	// add assign endpoint
+	mux.Handle("/api/books/assign", middleware.AuthMiddleware(http.HandlerFunc(s.handleAssignBookToCategory)))
+
 	return withCORS(mux)
 }
 

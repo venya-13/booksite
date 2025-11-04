@@ -41,6 +41,15 @@ type Repository interface {
 	UpdateBook(ctx context.Context, b repo.Book, categoryIDs []int) error
 	DeleteBook(ctx context.Context, id int) error
 	GetBooksByCategory(ctx context.Context, categoryID int) ([]repo.Book, error)
+
+	GetCategoriesWithBooks(ctx context.Context) ([]struct {
+		ID    int         `json:"id"`
+		Name  string      `json:"name"`
+		Books []repo.Book `json:"books"`
+	}, error)
+
+	GetUncategorizedBooks(ctx context.Context) ([]repo.Book, error)
+	AssignBookToCategory(ctx context.Context, bookID int, categoryID int) error
 }
 
 type (
@@ -276,4 +285,20 @@ func (s *Service) DeleteBook(ctx context.Context, id int) error {
 
 func (s *Service) GetBooksByCategory(ctx context.Context, categoryID int) ([]repo.Book, error) {
 	return s.Repo.GetBooksByCategory(ctx, categoryID)
+}
+
+func (s *Service) GetCategoriesWithBooks(ctx context.Context) ([]struct {
+	ID    int         `json:"id"`
+	Name  string      `json:"name"`
+	Books []repo.Book `json:"books"`
+}, error) {
+	return s.Repo.GetCategoriesWithBooks(ctx)
+}
+
+func (s *Service) GetUncategorizedBooks(ctx context.Context) ([]repo.Book, error) {
+	return s.Repo.GetUncategorizedBooks(ctx)
+}
+
+func (s *Service) AssignBookToCategory(ctx context.Context, bookID int, categoryID int) error {
+	return s.Repo.AssignBookToCategory(ctx, bookID, categoryID)
 }
