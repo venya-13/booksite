@@ -23,32 +23,9 @@ import CategoriesPanel from './components/CategoriesPanel'
 import { register, login, setToken, removeToken, getToken } from './api'
 // Try both import styles for compatibility
 import { jwtDecode } from 'jwt-decode'
+import YouTubePlaylist from './components/YouTubePlaylist'
+import Home from './components/Home'
 
-function Home() {
-	return (
-		<Box
-			sx={{
-				py: 8,
-				px: 2,
-				textAlign: 'center',
-				background: 'linear-gradient(135deg, #e3f2fd 0%, #f7f9fc 100%)',
-				borderRadius: 4,
-			}}
-		>
-			<Typography variant='h3' sx={{ fontWeight: 800, mb: 1 }}>
-				Discover. Read. Grow.
-			</Typography>
-			<Typography
-				variant='h6'
-				color='text.secondary'
-				sx={{ maxWidth: 700, mx: 'auto' }}
-			>
-				Welcome to your modern online library. Browse curated categories, search
-				instantly, and enjoy a clean reading experience.
-			</Typography>
-		</Box>
-	)
-}
 function About() {
 	return (
 		<Box p={2}>
@@ -88,18 +65,6 @@ function About() {
 					Истинное Евангелие Царства Божьего Иехова
 				</Typography>
 			</Box>
-		</Box>
-	)
-}
-function YouTubePlaylist() {
-	return (
-		<Box p={2} sx={{ textAlign: 'center' }}>
-			<Typography variant='h4' gutterBottom>
-				Featured YouTube Playlist
-			</Typography>
-			<Typography color='text.secondary'>
-				Add your channel or playlist to inspire readers.
-			</Typography>
 		</Box>
 	)
 }
