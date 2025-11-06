@@ -195,30 +195,14 @@ func (r *PostgresRepo) RenameCategory(ctx context.Context, id int, name string) 
 	return err
 }
 
-func (r *PostgresRepo) CreateBook(ctx context.Context, b Book, categoryIDs []int) (int, error) {
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		return 0, err
-	}
-	defer tx.Rollback(ctx)
-
+func (r *PostgresRepo) CreateBook(ctx context.Context, b Book, catIDs []int) (int, error) {
 	var id int
-	err = tx.QueryRow(ctx, `
-        INSERT INTO books (title, author, description, file_url, cover_path)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING id
-    `, b.Title, b.Author, b.Description, b.FileURL, b.CoverPath).Scan(&id)
+	err := r.db.QueryRow(ctx, `
+		INSERT INTO books (title, author, description, file_url, cover_path)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id
+	`, b.Title, b.Author, b.Description, b.FileURL, b.CoverPath).Scan(&id)
 	if err != nil {
-		return 0, err
-	}
-
-	for _, cid := range categoryIDs {
-		if _, err := tx.Exec(ctx, `INSERT INTO book_categories (book_id, category_id) VALUES ($1, $2)`, id, cid); err != nil {
-			return 0, err
-		}
-	}
-
-	if err := tx.Commit(ctx); err != nil {
 		return 0, err
 	}
 	return id, nil

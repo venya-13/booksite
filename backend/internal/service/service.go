@@ -260,7 +260,21 @@ func (s *Service) RenameCategory(ctx context.Context, id int, name string) error
 }
 
 func (s *Service) CreateBook(ctx context.Context, b repo.Book, catIDs []int) (int, error) {
-	return s.Repo.CreateBook(ctx, b, catIDs)
+	id, err := s.Repo.CreateBook(ctx, b, catIDs)
+	if err != nil {
+		return 0, err
+	}
+
+	for _, catID := range catIDs {
+		if catID == 0 {
+			continue
+		}
+		if err := s.Repo.AssignBookToCategory(ctx, id, catID); err != nil {
+			return id, err
+		}
+	}
+
+	return id, nil
 }
 
 func (s *Service) GetAllBooks(ctx context.Context) ([]repo.Book, error) {

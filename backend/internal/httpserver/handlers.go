@@ -287,6 +287,10 @@ func (s *Server) handleRenameCategory(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleCreateBook(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+
+		cats := r.FormValue("categories")
+		fmt.Println("CATEGORIES RAW:", cats)
+
 		return
 	}
 
