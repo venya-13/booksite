@@ -49,6 +49,7 @@ func (s *Server) createMux() http.Handler {
 	mux.HandleFunc("/oauth2callback", s.handleCallback)
 	mux.HandleFunc("/refresh", s.handleRefresh)
 	mux.HandleFunc("/api/auth/refresh", s.handleJWTRefresh)
+	mux.HandleFunc("/health", s.handleHealth)
 
 	// --- GOOGLE PROFILE + PROTECTED ROUTES ---
 	mux.Handle("/api/google-profile", middleware.AuthMiddleware(http.HandlerFunc(s.handleGoogleProfile)))
