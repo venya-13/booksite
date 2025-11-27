@@ -121,7 +121,7 @@ function App() {
 				setIsAdmin(!!decoded.is_admin)
 				navigate('/')
 			} catch (e: any) {
-				setErr(e.response?.data?.error || 'Login failed')
+				setErr(e.response?.data?.error || 'Ошибка входа')
 			} finally {
 				setLoading(false)
 			}
@@ -139,7 +139,7 @@ function App() {
 					onlyGoogle
 				/>
 				{err && <Typography color='error'>{err}</Typography>}
-				{loading && <Typography>Loading...</Typography>}
+				{loading && <Typography>Загрузка...</Typography>}
 			</Box>
 		)
 	}
@@ -158,7 +158,7 @@ function App() {
 				setIsAdmin(!!decoded.is_admin)
 				navigate('/')
 			} catch (e: any) {
-				setErr(e.response?.data?.error || 'Register failed')
+				setErr(e.response?.data?.error || 'Регистрация не удалась')
 			} finally {
 				setLoading(false)
 			}
@@ -174,7 +174,7 @@ function App() {
 					onGoogleAuth={handleGoogleAuth}
 				/>
 				{err && <Typography color='error'>{err}</Typography>}
-				{loading && <Typography>Loading...</Typography>}
+				{loading && <Typography>Загрузка...</Typography>}
 			</Box>
 		)
 	}
@@ -214,7 +214,7 @@ function App() {
 							transition: 'all .15s ease',
 						}}
 					>
-						Home
+						Главная страница
 					</Button>
 					<Button
 						color='inherit'
@@ -226,7 +226,7 @@ function App() {
 							transition: 'all .15s ease',
 						}}
 					>
-						Books
+						Книги
 					</Button>
 					<Button
 						color='inherit'
@@ -238,7 +238,7 @@ function App() {
 							transition: 'all .15s ease',
 						}}
 					>
-						About Us
+						Про нас
 					</Button>
 					<Button
 						color='inherit'
@@ -250,7 +250,7 @@ function App() {
 							transition: 'all .15s ease',
 						}}
 					>
-						YouTube Playlist
+						Плейлист YouTube
 					</Button>
 					{isAdmin && (
 						<Button
@@ -263,7 +263,7 @@ function App() {
 								transition: 'all .15s ease',
 							}}
 						>
-							Categories
+							Категории
 						</Button>
 					)}
 					{!user && (
@@ -279,7 +279,7 @@ function App() {
 								'&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' },
 							}}
 						>
-							Login/Register
+							Войти/Зарегистрироваться
 						</Button>
 					)}
 					{user && (
@@ -294,7 +294,7 @@ function App() {
 								'&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' },
 							}}
 						>
-							Logout
+							Выход
 						</Button>
 					)}
 					{isAdmin && (

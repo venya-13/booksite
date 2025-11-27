@@ -40,7 +40,7 @@ const Books: React.FC = () => {
 				setCategories(cats)
 				setUncategorizedBooks(uncats)
 			})
-			.catch(() => setError('Failed to load books'))
+			.catch(() => setError('Не удалось загрузить книги'))
 			.finally(() => setLoading(false))
 	}, [])
 
@@ -66,11 +66,11 @@ const Books: React.FC = () => {
 	return (
 		<Box p={2}>
 			<Typography variant='h4' gutterBottom sx={{ fontWeight: 800 }}>
-				Browse and Read Books
+				Просматривайте и читайте книги
 			</Typography>
 
 			<TextField
-				label='Search books'
+				label='Поиск книг'
 				variant='outlined'
 				fullWidth
 				margin='normal'
@@ -107,7 +107,7 @@ const Books: React.FC = () => {
 				<Typography color='error'>{error}</Typography>
 			) : filteredCategories.length === 0 &&
 			  filteredUncategorizedBooks.length === 0 ? (
-				<Typography>No books found.</Typography>
+				<Typography>Книг не найдено.</Typography>
 			) : (
 				<>
 					{filteredCategories.map((cat: any) => (
@@ -161,15 +161,15 @@ const Books: React.FC = () => {
 												{book.title}
 											</Typography>
 											<Typography color='text.secondary'>
-												by {book.author}
+												от {book.author}
 											</Typography>
 										</CardContent>
 										<CardActions>
 											<Button
 												size='small'
-												onClick={() => setSelectedBook(book)}
+												onClick={() => window.open(book.file_url, '_blank')}
 											>
-												Read
+												Читать
 											</Button>
 										</CardActions>
 									</Card>
@@ -226,7 +226,7 @@ const Books: React.FC = () => {
 										<CardActions>
 											<Button
 												size='small'
-												onClick={() => setSelectedBook(book)}
+												onClick={() => window.open(book.file_url, '_blank')}
 											>
 												Read
 											</Button>
@@ -255,7 +255,7 @@ const Books: React.FC = () => {
 						href={selectedBook?.file_url}
 						target='_blank'
 					>
-						Open Book
+						Открыть книгу
 					</Button>
 				</DialogContent>
 			</Dialog>

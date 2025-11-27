@@ -113,3 +113,4 @@ func (r *PostgresRepo) GetUserByGoogleID(googleID string) (map[string]interface{
 
 	return user, nil
 }
+

@@ -80,16 +80,16 @@ const CategoriesPanel: React.FC = () => {
 	return (
 		<Box>
 			<Typography variant='h4' gutterBottom>
-				Categories
+				Категории
 			</Typography>
 			<Stack direction='row' spacing={2} mb={3} alignItems='center'>
 				<TextField
-					label='New Category'
+					label='Новая Категория'
 					value={newCategory}
 					onChange={e => setNewCategory(e.target.value)}
 				/>
 				<Button variant='contained' onClick={handleCreate}>
-					Add Category
+					Добавить Категорию
 				</Button>
 			</Stack>
 			{(categories || []).map((cat: any) => (
@@ -107,7 +107,7 @@ const CategoriesPanel: React.FC = () => {
 								<Button onClick={() => handleRename(cat.id)}>Save</Button>
 								<Button onClick={() => setEditId(null)}>Cancel</Button>
 								<Button color='error' onClick={() => handleDelete(cat.id)}>
-									Delete
+									Удалить
 								</Button>
 							</>
 						) : (
@@ -119,10 +119,10 @@ const CategoriesPanel: React.FC = () => {
 										setEditName(cat.name)
 									}}
 								>
-									Rename
+									Переименовать
 								</Button>
 								<Button color='error' onClick={() => handleDelete(cat.id)}>
-									Delete
+									Удалить
 								</Button>
 							</>
 						)}
@@ -149,7 +149,7 @@ const CategoriesPanel: React.FC = () => {
 			))}
 			<Box mb={5}>
 				<Typography variant='h6' gutterBottom>
-					Unassigned Books
+					Нераспределенные книги
 				</Typography>
 				<Box display='flex' flexWrap='wrap' gap={2} mt={2}>
 					{uncategorizedBooks.map((book: any) => (
@@ -161,7 +161,7 @@ const CategoriesPanel: React.FC = () => {
 								sx={{ position: 'absolute', top: 8, right: 8 }}
 								onClick={() => handleOpenAssign(book.id)}
 							>
-								Assign
+								Назначать
 							</Button>
 						</Card>
 					))}
@@ -174,7 +174,7 @@ const CategoriesPanel: React.FC = () => {
 				<DialogTitle>Assign Book to Category</DialogTitle>
 				<DialogContent>
 					<FormControl fullWidth>
-						<InputLabel>Category</InputLabel>
+						<InputLabel>Категории</InputLabel>
 						<Select
 							value={selectedCategory}
 							label='Category'
@@ -192,10 +192,10 @@ const CategoriesPanel: React.FC = () => {
 					<Button
 						onClick={() => setAssignDialog({ open: false, bookId: null })}
 					>
-						Cancel
+						Отмена
 					</Button>
 					<Button onClick={handleAssign} variant='contained'>
-						Assign
+						Назначить
 					</Button>
 				</DialogActions>
 			</Dialog>
