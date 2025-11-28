@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { Routes, Route, Link, useNavigate } from 'react-router-dom'
 import {
 	AppBar,
 	Toolbar,
@@ -22,6 +21,7 @@ import YouTubePlaylist from './components/YouTubePlaylist'
 import Home from './components/Home'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
+import { Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom'
 
 function About() {
 	return (
@@ -246,6 +246,7 @@ function App() {
 		if (token) {
 			try {
 				const decoded: any = jwtDecode(token)
+				console.log('Decoded JWT:', decoded)
 				setUser(decoded.email)
 				setIsAdmin(!!decoded.is_admin)
 			} catch {
@@ -483,7 +484,11 @@ function App() {
 					<Route path='/youtube' element={<YouTubePlaylist />} />
 					<Route path='/login' element={<Login />} />
 					<Route path='/register' element={<Register />} />
-					<Route path='/admin' element={<AdminPanel />} />
+					<Route
+						path='/admin'
+						element={isAdmin ? <AdminPanel /> : <Navigate to='/' replace />}
+					/>
+
 					<Route path='/categories' element={<CategoriesPanel />} />
 					<Route path='/academy' element={<AcademyUcheniya />} />
 					<Route
