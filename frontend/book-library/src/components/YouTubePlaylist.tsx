@@ -52,7 +52,7 @@ const YouTubePlaylist: React.FC = () => {
 			}}
 		>
 			<Typography variant='h3' align='center' sx={{ fontWeight: 800, mb: 6 }}>
-				🎥 Видео тематики
+				Видео тематики
 			</Typography>
 
 			{sections.map((sec, secIdx) => {

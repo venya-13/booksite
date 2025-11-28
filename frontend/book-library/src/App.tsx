@@ -1,11 +1,5 @@
 import React, { useState } from 'react'
-import {
-	BrowserRouter as Router,
-	Routes,
-	Route,
-	Link,
-	useNavigate,
-} from 'react-router-dom'
+import { Routes, Route, Link, useNavigate } from 'react-router-dom'
 import {
 	AppBar,
 	Toolbar,
@@ -14,6 +8,7 @@ import {
 	Container,
 	Box,
 	IconButton,
+	TextField,
 } from '@mui/material'
 import MenuBookIcon from '@mui/icons-material/MenuBook'
 import Books from './components/Books'
@@ -25,6 +20,8 @@ import { register, login, setToken, removeToken, getToken } from './api'
 import { jwtDecode } from 'jwt-decode'
 import YouTubePlaylist from './components/YouTubePlaylist'
 import Home from './components/Home'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
 
 function About() {
 	return (
@@ -68,11 +65,172 @@ function About() {
 		</Box>
 	)
 }
+function ProgramUchenichestva() {
+	const [form, setForm] = useState({ name: '', email: '', message: '' })
+
+	const handleChange = (
+		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+	) => {
+		setForm({ ...form, [e.target.name]: e.target.value })
+	}
+
+	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault()
+		alert('Сообщение отправлено!')
+	}
+
+	return (
+		<Box sx={{ maxWidth: '900px', mx: 'auto', py: 4 }}>
+			<Typography variant='h4' textAlign='center' mb={3}>
+				Программа Ученичества
+			</Typography>
+
+			<Typography variant='body1' mb={4} sx={{ lineHeight: 1.8 }}>
+				Центр Ученичества при сообществе “ДОМ ИЗРАИЛЯ” представляет
+				Аккредитованную двухлетнюю “Программу Ученичество”, которая
+				предназначена для “оснащения святых” и подготовки учеников для Мессии
+				Иешуа. Артур Бейли является канцлером Университета, руководителем
+				Международного служения Артура Бейли и апостолом, пастором, и учителем
+				Дома Израиля в Шарлотте, Северная Каролина. Arthur Bailey Ministries
+				International — это мессианское служение, которое обучает ивритским
+				корням христианской веры.
+			</Typography>
+		</Box>
+	)
+}
+
+function KursLiderstvo() {
+	return (
+		<Box sx={{ maxWidth: '900px', mx: 'auto', py: 4 }}>
+			<Typography variant='h4' textAlign='center' mb={3}>
+				Курс Лидерство
+			</Typography>
+
+			<Typography variant='body1' sx={{ lineHeight: 1.8 }}>
+				Раздел находится в разработке.
+			</Typography>
+		</Box>
+	)
+}
+
+function AcademyUcheniya() {
+	return (
+		<Box sx={{ maxWidth: '900px', mx: 'auto', py: 4 }}>
+			<Typography
+				variant='h3'
+				textAlign='center'
+				gutterBottom
+				sx={{ fontWeight: 'bold', color: '#1976d2' }}
+			>
+				Академ Учения
+			</Typography>
+
+			<Typography
+				variant='body1'
+				sx={{ lineHeight: 1.8, fontSize: '1.2rem', color: '#333' }}
+			>
+				Апостол Доктор Богословия Артур Бейли является разработчиком и
+				продюсером ведущей программы ученичество под названием “Ученичество
+				101”, и ведущей программы под названием “Лидерство 101” и Программы для
+				Служителей. Др. Бейли внес ясность во многие противоречивые и трудные
+				для понимания библейские отрывки. Он оснащает людей Иехова для служения,
+				чтобы ответить на призыв лидерства, ученичества и служения. Исследуйте
+				этот сайт, который был разработан для русскоязычной аудитории и,
+				пожалуйста, воспользуйтесь многочисленными электронными книгами и
+				учениями бесплатно, для вашего обучения и роста опыта в Иешуа Мессии.
+			</Typography>
+		</Box>
+	)
+}
+
+function KursSluzhiteley() {
+	const [form, setForm] = useState({ name: '', email: '', message: '' })
+
+	const handleChange = (
+		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+	) => {
+		setForm({ ...form, [e.target.name]: e.target.value })
+	}
+
+	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault()
+		alert('Сообщение отправлено!')
+	}
+
+	return (
+		<Box sx={{ maxWidth: '900px', mx: 'auto', py: 4 }}>
+			<Typography variant='h4' textAlign='center' mb={3}>
+				Курс Подготовки Служителей
+			</Typography>
+
+			<Typography variant='body1' mb={4} sx={{ lineHeight: 1.8 }}>
+				Призвание к Служению — это наивысшее Призвание, которое вы можете
+				получить на земле, потому что оно исходит от Самого Творца. Вы должны
+				видеть себя мировым лидером. Он призвал вас из всех людей представлять
+				Его, Царя царей, Царя Славы! Важно, чтобы вы реализовали свое Призвание.
+				<br />
+				<br />
+				В этом курсе Артур Бэйли затрагивает темы: Призвание служителя, развитие
+				и подготовка; Женщины в служении; Формы служения; Дары; Великое
+				поручение; Методы исследования; Личностное развитие; Границы отношений;
+				Финансовая честность; Стресс.
+				<br />
+				<br />
+				Этот курс поможет вам утвердиться в своем призвании-посланника Мессии.
+			</Typography>
+
+			<Box
+				component='form'
+				onSubmit={handleSubmit}
+				sx={{ p: 3, border: '1px solid #ccc', borderRadius: 2 }}
+			>
+				<Typography variant='h6' mb={2}>
+					Связаться с нами
+				</Typography>
+
+				<TextField
+					fullWidth
+					label='Имя'
+					name='name'
+					value={form.name}
+					onChange={handleChange}
+					margin='normal'
+				/>
+
+				<TextField
+					fullWidth
+					label='Email'
+					name='email'
+					value={form.email}
+					onChange={handleChange}
+					margin='normal'
+				/>
+
+				<TextField
+					fullWidth
+					label='Сообщение'
+					name='message'
+					value={form.message}
+					onChange={handleChange}
+					margin='normal'
+					multiline
+					rows={4}
+				/>
+
+				<Button type='submit' variant='contained' sx={{ mt: 2 }}>
+					Отправить
+				</Button>
+			</Box>
+		</Box>
+	)
+}
 
 function App() {
 	const [user, setUser] = useState<string | null>(null)
+	const [anchorElAcadem, setAnchorElAcadem] = useState<null | HTMLElement>(null)
 	const [isAdmin, setIsAdmin] = useState(false)
 	const [error, setError] = useState<string | null>(null)
+	const navigate = useNavigate()
 
 	React.useEffect(() => {
 		const params = new URLSearchParams(window.location.search)
@@ -104,83 +262,35 @@ function App() {
 		removeToken()
 		setUser(null)
 		setIsAdmin(false)
+		navigate('/')
 	}
 
 	function Login() {
-		const [loading, setLoading] = useState(false)
-		const [err, setErr] = useState<string | null>(null)
-		const navigate = useNavigate()
-		const handleLogin = async (email: string, password: string) => {
-			setLoading(true)
-			setErr(null)
-			try {
-				const res = await login(email, password)
-				setToken(res.token)
-				const decoded: any = jwtDecode(res.token)
-				setUser(decoded.email)
-				setIsAdmin(!!decoded.is_admin)
-				navigate('/')
-			} catch (e: any) {
-				setErr(e.response?.data?.error || 'Ошибка входа')
-			} finally {
-				setLoading(false)
-			}
-		}
-		const handleGoogleAuth = () => {
+		React.useEffect(() => {
 			window.location.href = 'http://localhost:8080/login'
-		}
+		}, [])
 
 		return (
 			<Box p={2}>
-				<AuthForm
-					type='login'
-					onSubmit={handleLogin}
-					onGoogleAuth={handleGoogleAuth}
-					onlyGoogle
-				/>
-				{err && <Typography color='error'>{err}</Typography>}
-				{loading && <Typography>Загрузка...</Typography>}
+				<Typography>Перенаправляем на Google для авторизации...</Typography>
 			</Box>
 		)
 	}
+
 	function Register() {
-		const [loading, setLoading] = useState(false)
-		const [err, setErr] = useState<string | null>(null)
-		const navigate = useNavigate()
-		const handleRegister = async (email: string, password: string) => {
-			setLoading(true)
-			setErr(null)
-			try {
-				const res = await register(email, password)
-				setToken(res.token)
-				const decoded: any = jwtDecode(res.token)
-				setUser(decoded.email)
-				setIsAdmin(!!decoded.is_admin)
-				navigate('/')
-			} catch (e: any) {
-				setErr(e.response?.data?.error || 'Регистрация не удалась')
-			} finally {
-				setLoading(false)
-			}
-		}
-		const handleGoogleAuth = () => {
-			alert('Google Sign-In (mock)')
-		}
+		React.useEffect(() => {
+			window.location.href = 'http://localhost:8080/login'
+		}, [])
+
 		return (
 			<Box p={2}>
-				<AuthForm
-					type='register'
-					onSubmit={handleRegister}
-					onGoogleAuth={handleGoogleAuth}
-				/>
-				{err && <Typography color='error'>{err}</Typography>}
-				{loading && <Typography>Загрузка...</Typography>}
+				<Typography>Перенаправляем на Google для регистрации...</Typography>
 			</Box>
 		)
 	}
 
 	return (
-		<Router>
+		<>
 			<AppBar
 				position='sticky'
 				elevation={0}
@@ -194,6 +304,8 @@ function App() {
 						edge='start'
 						color='inherit'
 						aria-label='logo'
+						component={Link}
+						to='/'
 						sx={{ mr: 1 }}
 					>
 						<MenuBookIcon />
@@ -202,7 +314,7 @@ function App() {
 						variant='h6'
 						sx={{ flexGrow: 1, fontWeight: 800, letterSpacing: 0.2 }}
 					>
-						Book Library
+						Lives in truth
 					</Typography>
 					<Button
 						color='inherit'
@@ -240,6 +352,54 @@ function App() {
 					>
 						Про нас
 					</Button>
+
+					{/* Академ Учения */}
+					<Button
+						color='inherit'
+						onClick={e => setAnchorElAcadem(e.currentTarget)}
+						sx={{
+							opacity: 0.95,
+							'&:hover': { opacity: 1, transform: 'translateY(-1px)' },
+							transition: 'all .15s ease',
+						}}
+					>
+						Академ Учения
+					</Button>
+
+					<Menu
+						anchorEl={anchorElAcadem}
+						open={Boolean(anchorElAcadem)}
+						onClose={() => setAnchorElAcadem(null)}
+					>
+						<MenuItem
+							component={Link}
+							to='/academy'
+							onClick={() => setAnchorElAcadem(null)}
+						>
+							Об Академии
+						</MenuItem>
+						<MenuItem
+							component={Link}
+							to='/program-uchenichestva'
+							onClick={() => setAnchorElAcadem(null)}
+						>
+							Программа Ученичества
+						</MenuItem>
+						<MenuItem
+							component={Link}
+							to='/kurs-liderstvo'
+							onClick={() => setAnchorElAcadem(null)}
+						>
+							Курс Лидерство
+						</MenuItem>
+						<MenuItem
+							component={Link}
+							to='/kurs-sluzhiteley'
+							onClick={() => setAnchorElAcadem(null)}
+						>
+							Курс Подготовки Служителей
+						</MenuItem>
+					</Menu>
 					<Button
 						color='inherit'
 						component={Link}
@@ -310,7 +470,7 @@ function App() {
 								'&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' },
 							}}
 						>
-							Admin
+							Админ
 						</Button>
 					)}
 				</Toolbar>
@@ -325,9 +485,16 @@ function App() {
 					<Route path='/register' element={<Register />} />
 					<Route path='/admin' element={<AdminPanel />} />
 					<Route path='/categories' element={<CategoriesPanel />} />
+					<Route path='/academy' element={<AcademyUcheniya />} />
+					<Route
+						path='/program-uchenichestva'
+						element={<ProgramUchenichestva />}
+					/>
+					<Route path='/kurs-liderstvo' element={<KursLiderstvo />} />
+					<Route path='/kurs-sluzhiteley' element={<KursSluzhiteley />} />
 				</Routes>
 			</Container>
-		</Router>
+		</>
 	)
 }
 
