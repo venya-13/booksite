@@ -27,12 +27,12 @@ func (s *Service) EnsureAccessToken(googleID string) (string, error) {
 		return "", fmt.Errorf("invalid access token type for user %s", googleID)
 	}
 
-	// if token is still valid, return it
+	// still valid
 	if time.Now().Before(expiry) {
 		return accessToken, nil
 	}
 
-	// update token
+	// refresh from Google
 	refreshToken, ok := user["refresh_token"].(string)
 	if !ok || refreshToken == "" {
 		return "", fmt.Errorf("no refresh token available for user %s", googleID)
@@ -43,12 +43,10 @@ func (s *Service) EnsureAccessToken(googleID string) (string, error) {
 		return "", err
 	}
 
-	// if google did not return a new refresh token, keep the old one
 	if newToken.RefreshToken == "" {
 		newToken.RefreshToken = refreshToken
 	}
 
-	// updaate user info
 	user["access_token"] = newToken.AccessToken
 	user["refresh_token"] = newToken.RefreshToken
 	user["token_expiry"] = time.Now().Add(time.Duration(newToken.ExpiresIn) * time.Second)
@@ -61,14 +59,34 @@ func (s *Service) EnsureAccessToken(googleID string) (string, error) {
 }
 
 func (s *Service) RefreshJWT(refreshToken string) (*AuthResponse, error) {
-	claims, err := jwt.ValidateToken(refreshToken)
+	claims, err := jwt.ValidateRefreshToken(refreshToken)
 	if err != nil {
 		return nil, fmt.Errorf("invalid refresh token: %w", err)
 	}
 
-	newAccessToken, newRefreshToken, err := s.GenerateTokens(claims.GoogleID, claims.Email, claims.IsAdmin)
+	user, err := s.Repo.GetUserByGoogleID(claims.GoogleID)
+	if err != nil {
+		return nil, fmt.Errorf("user not found: %w", err)
+	}
+
+	email, _ := user["email"].(string)
+	isAdmin, _ := user["is_admin"].(bool)
+
+	newAccessToken, newRefreshToken, err := s.GenerateTokens(
+		claims.GoogleID,
+		email,
+		isAdmin,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate new tokens: %w", err)
+	}
+
+	user["access_token"] = newAccessToken
+	user["refresh_token"] = newRefreshToken
+	user["token_expiry"] = time.Now().Add(s.JWTTTL)
+
+	if err := s.Repo.SaveOrUpdate(user); err != nil {
+		return nil, fmt.Errorf("failed to save updated tokens: %w", err)
 	}
 
 	return &AuthResponse{

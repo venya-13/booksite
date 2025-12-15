@@ -47,9 +47,6 @@ func run() error {
 
 	slog.Info("Logger initialized", slog.String("level", cfg.Logger.Level))
 
-	jwt.SetJWTKey(cfg.JWT.Secret)
-	slog.Info("JWT secret set")
-
 	slog.Info("Starting application",
 		slog.Int("port", cfg.HttpServer.Port),
 		slog.String("frontend_url", cfg.HttpServer.FrontendURL),
@@ -63,6 +60,8 @@ func run() error {
 }
 
 func start(ctx context.Context, cfg *config.Config) error {
+
+	jwt.SetSecrets(cfg.JWT.Secret, cfg.JWT.Secret)
 
 	googleCfg := google.Config{
 		ClientID:        cfg.GoogleAuth.ClientID,

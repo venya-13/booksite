@@ -61,6 +61,7 @@ func (s *Service) HandleCallback(code string) (*AuthResponse, error) {
 
 	id, _ := userInfo["id"].(string)
 	email, _ := userInfo["email"].(string)
+	userInfo["google_id"] = id
 	slog.Info("Fetched Google profile", slog.String("google_id", id), slog.String("email", email))
 
 	userInfo["access_token"] = tokenData.AccessToken
@@ -87,7 +88,8 @@ func (s *Service) HandleCallback(code string) (*AuthResponse, error) {
 		}
 	}
 
-	jwtToken, _, err := s.GenerateTokens(id, email, isAdmin)
+	jwtToken, refreshToken, err := s.GenerateTokens(id, email, isAdmin)
+
 	if err != nil {
 		slog.Error("Failed to generate JWT", slog.String("google_id", id), slog.String("error", err.Error()))
 		return nil, err
@@ -98,7 +100,7 @@ func (s *Service) HandleCallback(code string) (*AuthResponse, error) {
 	return &AuthResponse{
 		User:         userInfo,
 		AccessToken:  tokenData.AccessToken,
-		RefreshToken: userInfo["refresh_token"].(string),
+		RefreshToken: refreshToken,
 		JWT:          jwtToken,
 	}, nil
 }

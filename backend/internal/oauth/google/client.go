@@ -48,7 +48,7 @@ func (c *Client) GetAuthURL() string {
 		"scope":         {"email profile"},
 		"state":         {"random123"},
 		"access_type":   {"offline"},
-		"prompt":        {"select_account"},
+		"prompt":        {"consent"},
 	}.Encode()
 
 	return authURL

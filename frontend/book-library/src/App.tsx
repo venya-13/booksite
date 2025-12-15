@@ -351,7 +351,7 @@ function App() {
 							transition: 'all .15s ease',
 						}}
 					>
-						Про нас
+						О нас
 					</Button>
 
 					{/* Академ Учения */}

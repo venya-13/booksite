@@ -35,7 +35,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		claims, err := jwt.ValidateToken(tokenStr)
+		claims, err := jwt.ValidateAccessToken(tokenStr)
 		if err != nil {
 			http.Error(w, "invalid token", http.StatusUnauthorized)
 			return
