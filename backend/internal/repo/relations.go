@@ -27,27 +27,20 @@ func (r *PostgresRepo) GetBooksByCategory(ctx context.Context, categoryID int) (
 }
 
 // GetCategoriesWithBooks returns categories where each category has Books field (inline struct)
-func (r *PostgresRepo) GetCategoriesWithBooks(ctx context.Context) ([]struct {
-	ID    int    `json:"id"`
-	Name  string `json:"name"`
-	Books []Book `json:"books"`
-}, error) {
-	rows, err := r.db.Query(ctx, `SELECT id, name FROM categories ORDER BY id`)
+func (r *PostgresRepo) GetCategoriesWithBooks(ctx context.Context) ([]CategoryWithBooks, error) {
+	rows, err := r.db.Query(ctx, `SELECT id, name, slug, is_system
+FROM categories
+ORDER BY id
+`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	type CatWithBooks struct {
-		ID    int    `json:"id"`
-		Name  string `json:"name"`
-		Books []Book `json:"books"`
-	}
-
-	var res []CatWithBooks
+	var res []CategoryWithBooks
 	for rows.Next() {
-		var c CatWithBooks
-		if err := rows.Scan(&c.ID, &c.Name); err != nil {
+		var c CategoryWithBooks
+		if err := rows.Scan(&c.ID, &c.Name, &c.Slug, &c.IsSystem); err != nil {
 			return nil, err
 		}
 		// load books for category
@@ -72,19 +65,7 @@ func (r *PostgresRepo) GetCategoriesWithBooks(ctx context.Context) ([]struct {
 		brows.Close()
 		res = append(res, c)
 	}
-	// convert type to anonymous expected (or change signature upstream)
-	// build return slice
-	out := make([]struct {
-		ID    int    `json:"id"`
-		Name  string `json:"name"`
-		Books []Book `json:"books"`
-	}, len(res))
-	for i := range res {
-		out[i].ID = res[i].ID
-		out[i].Name = res[i].Name
-		out[i].Books = res[i].Books
-	}
-	return out, nil
+	return res, nil
 }
 
 // GetUncategorizedBooks returns books which have no entry in book_categories

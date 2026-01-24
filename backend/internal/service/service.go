@@ -29,11 +29,7 @@ type Repository interface {
 	DeleteBook(ctx context.Context, id int) error
 	GetBooksByCategory(ctx context.Context, categoryID int) ([]repo.Book, error)
 
-	GetCategoriesWithBooks(ctx context.Context) ([]struct {
-		ID    int         `json:"id"`
-		Name  string      `json:"name"`
-		Books []repo.Book `json:"books"`
-	}, error)
+	GetCategoriesWithBooks(ctx context.Context) ([]repo.CategoryWithBooks, error)
 
 	GetUncategorizedBooks(ctx context.Context) ([]repo.Book, error)
 	AssignBookToCategory(ctx context.Context, bookID int, categoryID int) error

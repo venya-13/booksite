@@ -44,6 +44,24 @@ type DatabaseConfig struct {
 func Load() (*Config, error) {
 	v := viper.New()
 
+	// Enable environment variables
+	v.SetEnvPrefix("")
+	v.AutomaticEnv()
+
+	// Set environment variable mappings
+	v.BindEnv("httpserver.port", "HTTPSERVER_PORT")
+	v.BindEnv("httpserver.frontend_url", "HTTPSERVER_FRONTEND_URL")
+	v.BindEnv("httpserver.redirect_base_url", "HTTPSERVER_REDIRECT_BASE_URL")
+	v.BindEnv("database.dsn", "DATABASE_DSN")
+	v.BindEnv("jwt.secret", "JWT_SECRET")
+	v.BindEnv("jwt.refresh_secret", "JWT_REFRESH_SECRET")
+	v.BindEnv("jwt.ttl", "JWT_TTL")
+	v.BindEnv("jwt.refresh_ttl", "JWT_REFRESH_TTL")
+	v.BindEnv("logger.level", "LOGGER_LEVEL")
+	v.BindEnv("logger.json", "LOGGER_JSON")
+	v.BindEnv("googleauth.client_id", "GOOGLE_CLIENT_ID")
+	v.BindEnv("googleauth.client_secret", "GOOGLE_CLIENT_SECRET")
+
 	v.SetConfigName("config")
 	v.SetConfigType("yaml")
 	v.AddConfigPath(".")
@@ -54,7 +72,7 @@ func Load() (*Config, error) {
 		slog.Warn("Config file not found, trying JSON", "error", err)
 		v.SetConfigType("json")
 		if err := v.ReadInConfig(); err != nil {
-			slog.Warn("Config JSON file not found, using defaults", "error", err)
+			slog.Warn("Config JSON file not found, using environment variables or defaults", "error", err)
 		}
 	} else {
 		slog.Info("Config file loaded", "file", v.ConfigFileUsed())

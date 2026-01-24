@@ -47,11 +47,7 @@ func (s *Service) GetBooksByCategory(ctx context.Context, categoryID int) ([]rep
 	return s.Repo.GetBooksByCategory(ctx, categoryID)
 }
 
-func (s *Service) GetCategoriesWithBooks(ctx context.Context) ([]struct {
-	ID    int         `json:"id"`
-	Name  string      `json:"name"`
-	Books []repo.Book `json:"books"`
-}, error) {
+func (s *Service) GetCategoriesWithBooks(ctx context.Context) ([]repo.CategoryWithBooks, error) {
 	return s.Repo.GetCategoriesWithBooks(ctx)
 }
 

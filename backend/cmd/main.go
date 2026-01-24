@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"syscall"
 	"time"
 
 	"google-auth-demo/backend/internal/config"
@@ -31,6 +30,8 @@ func run() error {
 		return fmt.Errorf("loading config: %w", err)
 	}
 
+	fmt.Fprintln(os.Stderr, "[debug] config loaded, about to init logger")
+
 	slog.Info("Config values",
 		"port", cfg.HttpServer.Port,
 		"frontend_url", cfg.HttpServer.FrontendURL,
@@ -53,8 +54,12 @@ func run() error {
 		slog.String("redirect_base", cfg.HttpServer.RedirectBaseURL),
 	)
 
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
+	// On Windows, os.Interrupt is the reliable signal to listen for.
+	// Using unsupported signals can result in surprising behavior.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	fmt.Fprintln(os.Stderr, "[debug] signal context created; ctx.Err() =", ctx.Err())
 
 	return start(ctx, cfg)
 }
@@ -62,6 +67,8 @@ func run() error {
 func start(ctx context.Context, cfg *config.Config) error {
 
 	jwt.SetSecrets(cfg.JWT.Secret, cfg.JWT.Secret)
+
+	fmt.Fprintln(os.Stderr, "[debug] starting: initializing oauth + repo")
 
 	googleCfg := google.Config{
 		ClientID:        cfg.GoogleAuth.ClientID,
@@ -72,6 +79,7 @@ func start(ctx context.Context, cfg *config.Config) error {
 
 	oauthGoogle := google.New(googleCfg)
 
+	fmt.Fprintln(os.Stderr, "[debug] creating postgres repo...")
 	repository, err := repo.NewPostgresRepo(repo.PostgresConfig{
 		DSN: cfg.Database.DSN,
 	})
@@ -79,6 +87,7 @@ func start(ctx context.Context, cfg *config.Config) error {
 	if err != nil {
 		return fmt.Errorf("init repo: %w", err)
 	}
+	fmt.Fprintln(os.Stderr, "[debug] repo ready; ctx.Err() =", ctx.Err())
 
 	jwtTTL := time.Duration(cfg.JWT.TTL) * time.Minute
 	refreshTTL := time.Duration(cfg.JWT.RefreshTTL) * time.Minute
@@ -91,6 +100,7 @@ func start(ctx context.Context, cfg *config.Config) error {
 		refreshTTL,
 	)
 
+	fmt.Fprintln(os.Stderr, "[debug] building http server...")
 	httpServerCfg := httpserver.Config{
 		Port:            cfg.HttpServer.Port,
 		FrontendURL:     cfg.HttpServer.FrontendURL,
@@ -99,5 +109,6 @@ func start(ctx context.Context, cfg *config.Config) error {
 
 	httpServer := httpserver.New(httpServerCfg, svc)
 
+	fmt.Fprintln(os.Stderr, "[debug] running http server; should listen on port", cfg.HttpServer.Port)
 	return httpServer.Run(ctx)
 }

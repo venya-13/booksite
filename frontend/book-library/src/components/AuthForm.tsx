@@ -23,7 +23,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, onGoogleAuth, onlyG
         <Box component="form" onSubmit={handleSubmit}>
           <Stack spacing={2}>
             <Typography variant="h5" align="center" sx={{ fontWeight: 800 }}>
-              {type === 'login' ? 'Welcome back' : 'Create your account'}
+              {type === 'login' ? 'С возвращением' : 'Создать аккаунт'}
             </Typography>
             {!onlyGoogle && (
               <>
@@ -35,20 +35,20 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit, onGoogleAuth, onlyG
                   required
                 />
                 <TextField
-                  label="Password"
+                  label="Пароль"
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
                 />
                 <Button type="submit" variant="contained" color="primary" fullWidth>
-                  {type === 'login' ? 'Login' : 'Register'}
+                  {type === 'login' ? 'Войти' : 'Зарегистрироваться'}
                 </Button>
-                <Divider>or</Divider>
+                <Divider>или</Divider>
               </>
             )}
             <Button variant="outlined" color="secondary" fullWidth onClick={onGoogleAuth}>
-              Continue with Google
+              Продолжить с Google
             </Button>
           </Stack>
         </Box>

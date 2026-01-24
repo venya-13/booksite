@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: booksite-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: booksite
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - booksite-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: booksite-backend
+    environment:
+      - DATABASE_DSN=postgres://postgres:postgres@postgres:5432/booksite?sslmode=disable
+      - HTTPSERVER_PORT=8080
+      - HTTPSERVER_FRONTEND_URL=http://localhost:3000
+      - HTTPSERVER_REDIRECT_BASE_URL=http://localhost
+      - JWT_SECRET=VenyaAccessSecret123
+      - JWT_REFRESH_SECRET=VenyaRefreshSecret456
+      - JWT_TTL=15
+      - JWT_REFRESH_TTL=10080
+      - LOGGER_LEVEL=info
+      - LOGGER_JSON=false
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-785719790099-o0ivp6amo7agnn1va04qfbl6r9rncfb6.apps.googleusercontent.com}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-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}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./uploads:/root/uploads
+      - ./config.yaml:/root/config.yaml:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - booksite-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend/book-library
+      dockerfile: Dockerfile
+    container_name: booksite-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - booksite-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  booksite-network:
+    driver: bridge

@@ -22,6 +22,7 @@ import Home from './components/Home'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import { Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom'
+import LeadershipCourse from './components/LeadershipCourse'
 
 function About() {
 	return (
@@ -101,15 +102,7 @@ function ProgramUchenichestva() {
 
 function KursLiderstvo() {
 	return (
-		<Box sx={{ maxWidth: '900px', mx: 'auto', py: 4 }}>
-			<Typography variant='h4' textAlign='center' mb={3}>
-				Курс Лидерство
-			</Typography>
-
-			<Typography variant='body1' sx={{ lineHeight: 1.8 }}>
-				Раздел находится в разработке.
-			</Typography>
-		</Box>
+		<LeadershipCourse />
 	)
 }
 
@@ -476,31 +469,38 @@ function App() {
 					)}
 				</Toolbar>
 			</AppBar>
-			<Container maxWidth='lg' sx={{ mt: 4, mb: 8 }}>
+			<Box
+				sx={{
+					minHeight: '100vh', // чтобы занимало всю высоту экрана
+					display: 'flex',
+					flexDirection: 'column',
+					background: 'linear-gradient(180deg, #f5f7ff 0%, #eaf1ff 100%)', // фон на всю страницу
+				}}
+				>
+			<Box sx={{ flex: 1, width: '100%' }}> {/* контент будет растягиваться */}
 				<Routes>
-					<Route path='/' element={<Home />} />
-					<Route path='/books' element={<Books />} />
-					<Route path='/about' element={<About />} />
-					<Route path='/youtube' element={<YouTubePlaylist />} />
-					<Route path='/login' element={<Login />} />
-					<Route path='/register' element={<Register />} />
-					<Route
-						path='/admin'
-						element={isAdmin ? <AdminPanel /> : <Navigate to='/' replace />}
-					/>
-
-					<Route path='/categories' element={<CategoriesPanel />} />
-					<Route path='/academy' element={<AcademyUcheniya />} />
-					<Route
-						path='/program-uchenichestva'
-						element={<ProgramUchenichestva />}
-					/>
-					<Route path='/kurs-liderstvo' element={<KursLiderstvo />} />
-					<Route path='/kurs-sluzhiteley' element={<KursSluzhiteley />} />
+				<Route path='/' element={<Home />} />
+				<Route path='/books' element={<Books />} />
+				<Route path='/about' element={<About />} />
+				<Route path='/youtube' element={<YouTubePlaylist />} />
+				<Route path='/login' element={<Login />} />
+				<Route path='/register' element={<Register />} />
+				<Route
+					path='/admin'
+					element={isAdmin ? <AdminPanel /> : <Navigate to='/' replace />}
+				/>
+				<Route path='/categories' element={<CategoriesPanel />} />
+				<Route path='/academy' element={<AcademyUcheniya />} />
+				<Route path='/program-uchenichestva' element={<ProgramUchenichestva />} />
+				<Route path='/kurs-liderstvo' element={<KursLiderstvo />} />
+				<Route path='/kurs-sluzhiteley' element={<KursSluzhiteley />} />
 				</Routes>
-			</Container>
+			</Box>
+		</Box>
+
 		</>
 	)
 }
 
 export default App
+

@@ -154,11 +154,43 @@ func (s *Server) handleUpdateBook(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDeleteBook(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	if err != nil || id == 0 {
+		http.Error(w, "invalid book id", http.StatusBadRequest)
+		return
+	}
+
+	// Get book information before deletion to find cover path
+	book, err := s.svc.GetBookByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, "failed to get book: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Delete cover image file if it exists
+	if book.CoverPath != "" {
+		// CoverPath is in format "/covers/filename.jpg"
+		// Convert to file system path: "./uploads/covers/filename.jpg"
+		coverPath := strings.TrimPrefix(book.CoverPath, "/covers/")
+		if coverPath != "" && coverPath != book.CoverPath {
+			filePath := "./uploads/covers/" + coverPath
+			
+			// Check if file exists before trying to delete
+			if _, err := os.Stat(filePath); err == nil {
+				if err := os.Remove(filePath); err != nil {
+					// Log error but don't fail the deletion if file removal fails
+					fmt.Printf("Warning: failed to delete cover file %s: %v\n", filePath, err)
+				}
+			}
+		}
+	}
+
+	// Delete book from database
 	if err := s.svc.DeleteBook(r.Context(), id); err != nil {
 		http.Error(w, "delete failed: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	w.Write([]byte("deleted"))
 }
 

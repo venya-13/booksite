@@ -50,7 +50,7 @@ const AdminPanel: React.FC = () => {
 			const data = await getBooks()
 			setBooks(Array.isArray(data) ? data : [])
 		} catch (e: any) {
-			setError('Failed to load books')
+			setError('Не удалось загрузить книги')
 		} finally {
 			setLoading(false)
 		}
@@ -138,7 +138,7 @@ const AdminPanel: React.FC = () => {
 				'Add book error:',
 				err?.response?.data ?? err.message ?? err
 			)
-			setError(err?.response?.data?.error || 'Failed to add book')
+			setError(err?.response?.data?.error || 'Не удалось добавить книгу')
 		} finally {
 			setAdding(false)
 		}
@@ -149,44 +149,80 @@ const AdminPanel: React.FC = () => {
 			await deleteBook(id)
 			await fetchBooks()
 		} catch (e: any) {
-			setError('Failed to remove book')
+			setError('Не удалось удалить книгу')
 		}
 	}
 
 	return (
-		<Box p={2}>
-			<Typography variant='h4' gutterBottom sx={{ fontWeight: 800 }}>
-				Admin Panel
+		<Box sx={{ px: { xs: 2, sm: 3, md: 4 }, py: 4, maxWidth: '1400px', mx: 'auto' }}>
+			<Typography 
+				variant='h4' 
+				gutterBottom 
+				sx={{ 
+					fontWeight: 800,
+					mb: 4,
+					background: 'linear-gradient(135deg, #1976d2 0%, #7c4dff 100%)',
+					WebkitBackgroundClip: 'text',
+					WebkitTextFillColor: 'transparent',
+					backgroundClip: 'text',
+					letterSpacing: '-0.02em',
+				}}
+			>
+				Панель Администратора
 			</Typography>
-			<Typography variant='h6' gutterBottom>
-				Add a New Book
+			<Typography 
+				variant='h6' 
+				gutterBottom 
+				sx={{ 
+					fontWeight: 600,
+					mb: 3,
+					color: 'text.primary',
+				}}
+			>
+				Добавить новую книгу
 			</Typography>
 			<Box
 				component='form'
 				onSubmit={handleAddBook}
 				sx={{
-					maxWidth: 520,
-					mb: 4,
-					p: 3,
-					borderRadius: 3,
+					maxWidth: 600,
+					mb: 6,
+					p: 4,
+					borderRadius: 4,
 					backgroundColor: 'background.paper',
-					boxShadow: '0 10px 25px rgba(2,6,23,0.06)',
+					boxShadow: '0 8px 30px rgba(2,6,23,0.1)',
+					transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+					'&:hover': {
+						boxShadow: '0 12px 40px rgba(2,6,23,0.12)',
+					},
 				}}
 			>
-				<Stack spacing={2}>
+				<Stack spacing={3}>
 					<TextField
-						label='Title'
+						label='Название'
 						name='title'
 						value={form.title}
 						onChange={handleChange}
 						required
+						fullWidth
+						sx={{
+							'& .MuiOutlinedInput-root': {
+								borderRadius: 2,
+							},
+						}}
 					/>
 					<TextField
-						label='Author'
+						label='Автор'
 						name='author'
 						value={form.author}
 						onChange={handleChange}
 						required
+						fullWidth
+						sx={{
+							'& .MuiOutlinedInput-root': {
+								borderRadius: 2,
+							},
+						}}
 					/>
 
 					<TextField
@@ -198,88 +234,220 @@ const AdminPanel: React.FC = () => {
 							)
 						}
 						SelectProps={{ native: true }}
+						fullWidth
+						label='Категория'
+						sx={{
+							'& .MuiOutlinedInput-root': {
+								borderRadius: 2,
+							},
+						}}
 					>
-						<option value=''>No Category</option>
+						<option value=''>Без категории</option>
 
 						{useCategoriesStore.getState().categories.map(cat => (
 							<option key={cat.id} value={cat.id}>
-								{cat.name}
+								{cat.is_system ? `${cat.name}` : cat.name}
 							</option>
 						))}
 					</TextField>
 					<TextField
-						label='Book URL'
+						label='URL книги'
 						name='bookUrl'
 						value={form.bookUrl || ''}
 						onChange={handleChange}
 						required
+						fullWidth
+						sx={{
+							'& .MuiOutlinedInput-root': {
+								borderRadius: 2,
+							},
+						}}
 					/>
-					<>
-						<input
-							type='file'
-							accept='.jpg,.jpeg,.png'
-							onChange={handleFileChange}
-							style={{ marginTop: 8 }}
-						/>
+					<Box>
+						<Button
+							component='label'
+							variant='outlined'
+							fullWidth
+							sx={{
+								py: 1.5,
+								borderRadius: 2,
+								borderWidth: 2,
+								'&:hover': {
+									borderWidth: 2,
+								},
+							}}
+						>
+							Выбрать обложку
+							<input
+								type='file'
+								accept='.jpg,.jpeg,.png'
+								onChange={handleFileChange}
+								hidden
+							/>
+						</Button>
 
 						{form.cover && typeof form.cover !== 'string' && (
-							<img
-								src={URL.createObjectURL(form.cover)}
-								alt='Book cover preview'
-								style={{
-									width: 160,
-									marginTop: 8,
-									borderRadius: 8,
-									border: '1px solid #e5e7eb',
+							<Box
+								sx={{
+									mt: 2,
+									p: 2,
+									borderRadius: 2,
+									backgroundColor: 'rgba(25, 118, 210, 0.04)',
+									display: 'inline-block',
 								}}
-							/>
+							>
+								<img
+									src={URL.createObjectURL(form.cover)}
+									alt='Превью обложки книги'
+									style={{
+										width: 200,
+										borderRadius: 12,
+										border: '2px solid rgba(25, 118, 210, 0.2)',
+										boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+									}}
+								/>
+							</Box>
 						)}
-					</>
+					</Box>
 
-					<Button type='submit' variant='contained' disabled={adding}>
-						{adding ? 'Adding...' : 'Add Book'}
+					{error && (
+						<Box
+							sx={{
+								p: 2,
+								borderRadius: 2,
+								backgroundColor: 'error.light',
+								color: 'error.main',
+							}}
+						>
+							<Typography variant='body2'>{error}</Typography>
+						</Box>
+					)}
+
+					<Button 
+						type='submit' 
+						variant='contained' 
+						disabled={adding}
+						fullWidth
+						size='large'
+						sx={{
+							py: 1.5,
+							borderRadius: 2,
+							background: 'linear-gradient(135deg, #1976d2 0%, #7c4dff 100%)',
+							'&:hover': {
+								background: 'linear-gradient(135deg, #1565c0 0%, #6a1b9a 100%)',
+							},
+							'&:disabled': {
+								background: 'rgba(0,0,0,0.12)',
+							},
+						}}
+					>
+						{adding ? 'Добавление...' : 'Добавить книгу'}
 					</Button>
 				</Stack>
 			</Box>
-			<Typography variant='h6' gutterBottom>
-				Current Books
+			<Typography 
+				variant='h6' 
+				gutterBottom 
+				sx={{ 
+					fontWeight: 600,
+					mb: 3,
+					color: 'text.primary',
+				}}
+			>
+				Текущие книги
 			</Typography>
 			{loading ? (
-				<Box display='flex' justifyContent='center' mt={4}>
-					<CircularProgress />
+				<Box display='flex' justifyContent='center' mt={6} mb={6}>
+					<CircularProgress size={60} thickness={4} />
 				</Box>
 			) : error ? (
-				<Typography color='error'>{error}</Typography>
+				<Box
+					sx={{
+						p: 3,
+						borderRadius: 2,
+						backgroundColor: 'error.light',
+						color: 'error.main',
+					}}
+				>
+					<Typography color='error'>{error}</Typography>
+				</Box>
 			) : (
-				<Box display='flex' flexWrap='wrap' gap={2}>
+				<Box 
+					display='flex' 
+					flexWrap='wrap' 
+					gap={3}
+					justifyContent={{ xs: 'center', md: 'flex-start' }}
+				>
 					{books.map(book => (
 						<Card
 							key={book.id}
 							sx={{
-								width: 300,
-								'&:hover': {
-									transform: 'translateY(-4px)',
-									boxShadow: '0 16px 30px rgba(2,6,23,0.10)',
-								},
+								width: { xs: '100%', sm: 280, md: 300 },
+								maxWidth: 300,
+								overflow: 'hidden',
 							}}
 						>
 							{book.cover_path && (
-								<img
+								<Box
+									component='img'
 									src={`http://localhost:8080${book.cover_path}`}
 									alt={book.title}
-									style={{ width: '100%', height: 180, objectFit: 'cover' }}
+									sx={{
+										width: '100%',
+										height: 220,
+										objectFit: 'cover',
+										transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+										'&:hover': {
+											transform: 'scale(1.05)',
+										},
+									}}
 								/>
 							)}
 
-							<CardContent>
-								<Typography variant='h6' sx={{ fontWeight: 700 }}>
+							<CardContent sx={{ pb: 2, pt: 2.5 }}>
+								<Typography 
+									variant='h6' 
+									sx={{ 
+										fontWeight: 700,
+										mb: 1,
+										lineHeight: 1.3,
+										minHeight: '3em',
+										display: '-webkit-box',
+										WebkitLineClamp: 2,
+										WebkitBoxOrient: 'vertical',
+										overflow: 'hidden',
+									}}
+								>
 									{book.title}
 								</Typography>
-								<Typography color='text.secondary'>by {book.author}</Typography>
+								<Typography 
+									color='text.secondary'
+									variant='body2'
+									sx={{ 
+										fontWeight: 500,
+										opacity: 0.8,
+									}}
+								>
+									от {book.author}
+								</Typography>
 							</CardContent>
-							<CardActions>
-								<Button color='error' onClick={() => handleRemoveBook(book.id)}>
-									Remove
+							<CardActions sx={{ px: 2, pb: 2.5 }}>
+								<Button 
+									color='error' 
+									onClick={() => handleRemoveBook(book.id)}
+									fullWidth
+									variant='outlined'
+									sx={{
+										borderWidth: 2,
+										borderRadius: 2,
+										py: 1,
+										'&:hover': {
+											borderWidth: 2,
+											backgroundColor: 'error.light',
+										},
+									}}
+								>
+									Удалить
 								</Button>
 							</CardActions>
 						</Card>

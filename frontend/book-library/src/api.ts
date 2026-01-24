@@ -65,14 +65,32 @@ export async function getCategoriesWithBooks() {
 }
 
 export async function createCategory(name: string) {
-	return api.post('/categories/create', { name }, { withCredentials: true })
+	const token = getToken()
+	if (!token) {
+		throw new Error('No authentication token found. Please log in.')
+	}
+	return api.post('/categories/create', { name }, { 
+		withCredentials: true,
+		headers: {
+			Authorization: `Bearer ${token}`
+		}
+	})
 }
 
 export async function renameCategory(id: number, name: string) {
+	const token = getToken()
+	if (!token) {
+		throw new Error('No authentication token found. Please log in.')
+	}
 	return api.put(
 		`/categories/rename?id=${id}`,
 		{ name },
-		{ withCredentials: true }
+		{ 
+			withCredentials: true,
+			headers: {
+				Authorization: `Bearer ${token}`
+			}
+		}
 	)
 }
 
@@ -87,5 +105,14 @@ export async function getUncategorizedBooks() {
 }
 
 export async function deleteCategory(id: number) {
-	return api.delete(`/categories/delete?id=${id}`, { withCredentials: true })
+	const token = getToken()
+	if (!token) {
+		throw new Error('No authentication token found. Please log in.')
+	}
+	return api.delete(`/categories/delete?id=${id}`, { 
+		withCredentials: true,
+		headers: {
+			Authorization: `Bearer ${token}`
+		}
+	})
 }

@@ -64,8 +64,20 @@ const Books: React.FC = () => {
 	const handleClearSearch = () => setSearch('')
 
 	return (
-		<Box p={2}>
-			<Typography variant='h4' gutterBottom sx={{ fontWeight: 800 }}>
+		<Box sx={{ px: { xs: 2, sm: 3, md: 4 }, py: 4, maxWidth: '1400px', mx: 'auto' }}>
+			<Typography 
+				variant='h4' 
+				gutterBottom 
+				sx={{ 
+					fontWeight: 800,
+					mb: 4,
+					background: 'linear-gradient(135deg, #1976d2 0%, #7c4dff 100%)',
+					WebkitBackgroundClip: 'text',
+					WebkitTextFillColor: 'transparent',
+					backgroundClip: 'text',
+					letterSpacing: '-0.02em',
+				}}
+			>
 				Просматривайте и читайте книги
 			</Typography>
 
@@ -79,22 +91,35 @@ const Books: React.FC = () => {
 				InputProps={{
 					startAdornment: (
 						<InputAdornment position='start'>
-							<Search />
+							<Search sx={{ color: 'primary.main', opacity: 0.7 }} />
 						</InputAdornment>
 					),
 					endAdornment: search && (
 						<InputAdornment position='end'>
-							<IconButton onClick={handleClearSearch} edge='end'>
+							<IconButton 
+								onClick={handleClearSearch} 
+								edge='end'
+								sx={{
+									'&:hover': {
+										backgroundColor: 'rgba(25, 118, 210, 0.08)',
+									},
+								}}
+							>
 								<Clear />
 							</IconButton>
 						</InputAdornment>
 					),
 				}}
 				sx={{
+					mb: 4,
 					'& .MuiOutlinedInput-root': {
 						backgroundColor: 'background.paper',
-						borderRadius: 3,
-						boxShadow: '0 6px 18px rgba(2, 6, 23, 0.06)',
+						borderRadius: 4,
+						boxShadow: '0 4px 16px rgba(2, 6, 23, 0.08)',
+						fontSize: '1.05rem',
+						'& fieldset': {
+							borderWidth: '2px',
+						},
 					},
 				}}
 			/>
@@ -113,40 +138,53 @@ const Books: React.FC = () => {
 					{filteredCategories.map((cat: any) => (
 						<Box
 							key={cat.id}
-							mb={5}
+							mb={6}
 							sx={{
-								p: 1,
-								borderRadius: 3,
+								p: 3,
+								borderRadius: 4,
 								background:
-									'linear-gradient(180deg, rgba(25,118,210,0.06), rgba(124,77,255,0.04))',
+									'linear-gradient(180deg, rgba(25,118,210,0.08), rgba(124,77,255,0.06))',
+								boxShadow: '0 4px 20px rgba(25, 118, 210, 0.08)',
+								transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+								'&:hover': {
+									boxShadow: '0 8px 30px rgba(25, 118, 210, 0.12)',
+								},
 							}}
 						>
-							<Divider sx={{ mb: 2 }}>
-								<Typography variant='h5' color='primary'>
+							<Divider sx={{ mb: 4 }}>
+								<Typography 
+									variant='h5' 
+									color='primary'
+									sx={{ 
+										fontWeight: 700,
+										px: 3,
+										py: 1,
+										background: 'rgba(255, 255, 255, 0.9)',
+										borderRadius: 2,
+									}}
+								>
 									{cat.name}
 								</Typography>
 							</Divider>
 							<Box
 								display='flex'
 								flexWrap='wrap'
-								gap={2}
-								justifyContent='center'
+								gap={3}
+								justifyContent={{ xs: 'center', md: 'flex-start' }}
 							>
 								{cat.books.map((book: any) => (
 									<Card
 										key={book.id}
 										sx={{
-											width: 300,
-											flex: '0 1 300px',
-											'&:hover': {
-												transform: 'translateY(-4px)',
-												boxShadow: '0 16px 30px rgba(2,6,23,0.10)',
-											},
+											width: { xs: '100%', sm: 280, md: 300 },
+											maxWidth: 300,
+											overflow: 'hidden',
+											cursor: 'pointer',
 										}}
 									>
 										<CardMedia
 											component='img'
-											height='180'
+											height='220'
 											image={
 												book.cover_path
 													? book.cover_path.startsWith('/')
@@ -154,20 +192,55 @@ const Books: React.FC = () => {
 														: book.cover_path
 													: placeholderCover
 											}
-											alt={book.title + ' cover'}
+											alt={book.title + ' обложка'}
+											sx={{
+												transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+												'&:hover': {
+													transform: 'scale(1.05)',
+												},
+											}}
 										/>
-										<CardContent>
-											<Typography variant='h6' sx={{ fontWeight: 700 }}>
+										<CardContent sx={{ pb: 2, pt: 2.5 }}>
+											<Typography 
+												variant='h6' 
+												sx={{ 
+													fontWeight: 700,
+													mb: 1,
+													lineHeight: 1.3,
+													minHeight: '3em',
+													display: '-webkit-box',
+													WebkitLineClamp: 2,
+													WebkitBoxOrient: 'vertical',
+													overflow: 'hidden',
+												}}
+											>
 												{book.title}
 											</Typography>
-											<Typography color='text.secondary'>
+											<Typography 
+												color='text.secondary'
+												variant='body2'
+												sx={{ 
+													fontWeight: 500,
+													opacity: 0.8,
+												}}
+											>
 												от {book.author}
 											</Typography>
 										</CardContent>
-										<CardActions>
+										<CardActions sx={{ px: 2, pb: 2.5 }}>
 											<Button
-												size='small'
+												size='medium'
+												variant='contained'
+												fullWidth
 												onClick={() => window.open(book.file_url, '_blank')}
+												sx={{
+													py: 1.5,
+													borderRadius: 2,
+													background: 'linear-gradient(135deg, #1976d2 0%, #7c4dff 100%)',
+													'&:hover': {
+														background: 'linear-gradient(135deg, #1565c0 0%, #6a1b9a 100%)',
+													},
+												}}
 											>
 												Читать
 											</Button>
@@ -179,33 +252,50 @@ const Books: React.FC = () => {
 					))}
 
 					{filteredUncategorizedBooks.length > 0 && (
-						<Box mb={5}>
-							<Divider sx={{ mb: 2 }}>
-								<Typography variant='h5' color='secondary'>
-									Uncategorized
+						<Box 
+							mb={6}
+							sx={{
+								p: 3,
+								borderRadius: 4,
+								background:
+									'linear-gradient(180deg, rgba(124,77,255,0.08), rgba(25,118,210,0.06))',
+								boxShadow: '0 4px 20px rgba(124, 77, 255, 0.08)',
+							}}
+						>
+							<Divider sx={{ mb: 4 }}>
+								<Typography 
+									variant='h5' 
+									color='secondary'
+									sx={{ 
+										fontWeight: 700,
+										px: 3,
+										py: 1,
+										background: 'rgba(255, 255, 255, 0.9)',
+										borderRadius: 2,
+									}}
+								>
+									Без категории
 								</Typography>
 							</Divider>
 							<Box
 								display='flex'
 								flexWrap='wrap'
-								gap={2}
-								justifyContent='center'
+								gap={3}
+								justifyContent={{ xs: 'center', md: 'flex-start' }}
 							>
 								{filteredUncategorizedBooks.map((book: any) => (
 									<Card
 										key={book.id}
 										sx={{
-											width: 300,
-											flex: '0 1 300px',
-											'&:hover': {
-												transform: 'translateY(-4px)',
-												boxShadow: '0 16px 30px rgba(2,6,23,0.10)',
-											},
+											width: { xs: '100%', sm: 280, md: 300 },
+											maxWidth: 300,
+											overflow: 'hidden',
+											cursor: 'pointer',
 										}}
 									>
 										<CardMedia
 											component='img'
-											height='180'
+											height='220'
 											image={
 												book.cover_path
 													? book.cover_path.startsWith('/')
@@ -213,22 +303,57 @@ const Books: React.FC = () => {
 														: book.cover_path
 													: placeholderCover
 											}
-											alt={book.title + ' cover'}
+											alt={book.title + ' обложка'}
+											sx={{
+												transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+												'&:hover': {
+													transform: 'scale(1.05)',
+												},
+											}}
 										/>
-										<CardContent>
-											<Typography variant='h6' sx={{ fontWeight: 700 }}>
+										<CardContent sx={{ pb: 2, pt: 2.5 }}>
+											<Typography 
+												variant='h6' 
+												sx={{ 
+													fontWeight: 700,
+													mb: 1,
+													lineHeight: 1.3,
+													minHeight: '3em',
+													display: '-webkit-box',
+													WebkitLineClamp: 2,
+													WebkitBoxOrient: 'vertical',
+													overflow: 'hidden',
+												}}
+											>
 												{book.title}
 											</Typography>
-											<Typography color='text.secondary'>
-												by {book.author}
+											<Typography 
+												color='text.secondary'
+												variant='body2'
+												sx={{ 
+													fontWeight: 500,
+													opacity: 0.8,
+												}}
+											>
+												от {book.author}
 											</Typography>
 										</CardContent>
-										<CardActions>
+										<CardActions sx={{ px: 2, pb: 2.5 }}>
 											<Button
-												size='small'
+												size='medium'
+												variant='contained'
+												fullWidth
 												onClick={() => window.open(book.file_url, '_blank')}
+												sx={{
+													py: 1.5,
+													borderRadius: 2,
+													background: 'linear-gradient(135deg, #1976d2 0%, #7c4dff 100%)',
+													'&:hover': {
+														background: 'linear-gradient(135deg, #1565c0 0%, #6a1b9a 100%)',
+													},
+												}}
 											>
-												Read
+												Читать
 											</Button>
 										</CardActions>
 									</Card>
@@ -248,7 +373,7 @@ const Books: React.FC = () => {
 				<DialogTitle>{selectedBook?.title}</DialogTitle>
 				<DialogContent>
 					<Typography variant='subtitle1' gutterBottom>
-						by {selectedBook?.author}
+						от {selectedBook?.author}
 					</Typography>
 					<Button
 						variant='contained'
